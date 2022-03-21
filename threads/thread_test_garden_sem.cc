@@ -26,7 +26,7 @@ Turnstile(void *n_)
         sem->P();
         int temp = count;
         count = temp + 1;
-        printf("Turnstile %u. Count is now %u.\n", *n, count);
+        DEBUG('s', "Turnstile %u. Count is now %u.\n", *n, count);
         sem->V();
         currentThread->Yield();
     }
