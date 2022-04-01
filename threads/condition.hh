@@ -77,6 +77,9 @@ private:
     const char *name;
 
     // Other needed fields are to be added here.
+    Lock *lock;
+    List<Semaphore *> queue;
+
 };
 
 
