@@ -16,7 +16,9 @@
 
 #ifndef NACHOS_THREADS_LOCK__HH
 #define NACHOS_THREADS_LOCK__HH
-
+#include "semaphore.hh"
+#include "thread.hh"
+#include "system.hh"
 
 /// This class defines a “lock”.
 ///
@@ -58,6 +60,8 @@ private:
     const char *name;
 
     // Add other needed fields here.
+    Semaphore *sem;
+    Thread *threadLock;
 };
 
 

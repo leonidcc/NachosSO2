@@ -21,10 +21,16 @@
 /// Dummy functions -- so we can compile our later assignments.
 
 Lock::Lock(const char *debugName)
-{}
+{
+    name = debugName;
+    threadLock = null;
+    sem = new Semaphore("sem", 1);
+}
 
 Lock::~Lock()
-{}
+{
+    delete sem;
+}
 
 const char *
 Lock::GetName() const
@@ -34,19 +40,21 @@ Lock::GetName() const
 
 void
 Lock::Acquire()
-{
-    // TODO
+{   
+    ASSERT(!IsHeldByCurrentThread)
+    threadLock = currentThread;
+    sem->P();
 }
 
 void
 Lock::Release()
 {
-    // TODO
+    ASSERT(IsHeldByCurrentThread)
+    sem->V();
 }
 
 bool
 Lock::IsHeldByCurrentThread() const
 {
-    // TODO
-    return false;
+    return currentThread == threadLock;
 }
