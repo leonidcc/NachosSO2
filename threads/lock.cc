@@ -23,7 +23,7 @@
 Lock::Lock(const char *debugName)
 {
     name = debugName;
-    threadLock = null;
+    threadLock = NULL;
     sem = new Semaphore("sem", 1);
 }
 
@@ -40,16 +40,17 @@ Lock::GetName() const
 
 void
 Lock::Acquire()
-{   
-    ASSERT(!IsHeldByCurrentThread)
-    threadLock = currentThread;
+{
+    ASSERT(!IsHeldByCurrentThread());
     sem->P();
+    threadLock = currentThread;
 }
 
 void
 Lock::Release()
 {
-    ASSERT(IsHeldByCurrentThread)
+    ASSERT(IsHeldByCurrentThread());
+    threadLock = NULL;
     sem->V();
 }
 

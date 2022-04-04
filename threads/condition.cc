@@ -27,7 +27,7 @@ Condition::Condition(const char *debugName, Lock *conditionLock)
 {
     name = debugName;
     lock = conditionLock;
-    queue = new List<Semaphore *>*();
+    queue = new List<Semaphore *>();
 }
 
 Condition::~Condition()
@@ -49,7 +49,6 @@ Condition::Wait()
     lock->Release();
     sem->P();
     lock->Acquire();
-
 }
 
 void
