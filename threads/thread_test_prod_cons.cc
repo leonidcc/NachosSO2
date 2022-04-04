@@ -13,8 +13,6 @@ int capacidadBuffer = 10;
 Lock *lock = new Lock("lockProducerConsumer");
 Condition *condition = new Condition("conditionProducerConsumer", lock);
 
-using namespace std;
-
 void add() {
   while (itemCount == capacidadBuffer) {
     condition->Wait();
@@ -22,7 +20,7 @@ void add() {
 
   itemCount ++;
 
-  if (itemCount == 1) {
+  if (itemCount > 0) {
     condition->Signal();
   }
 }
@@ -34,7 +32,7 @@ void remove() {
 
   itemCount --;
 
-  if (itemCount == capacidadBuffer - 1) {
+  if (itemCount < capacidadBuffer) {
     condition->Signal();
   }
 }
@@ -64,8 +62,10 @@ ThreadTestProdCons()
 {
   Thread *hilo1 = new Thread("consumer1");
   Thread *hilo2 = new Thread("consumer2");
+  Thread *hilo3 = new Thread("consumer3");
   void *arg = NULL;
   hilo1->Fork(consumer, arg);
   hilo2->Fork(consumer, arg);
+  hilo3->Fork(consumer, arg);
   producer(arg);
 }
