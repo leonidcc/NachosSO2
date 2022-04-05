@@ -5,16 +5,16 @@ Channel::Channel(const char *debugName) {
     // strcat((char*)debugName , "-lockChannel")
     lock = new Lock("lockChannel");
     // strcat((char*)debugName , "-conditionChannel"
-    condition = new Condition("conditionChannel", lock);
-    buffer = NULL;
+    full = new Condition("fullConditionChannel", lock);
+    empty = new Condition("emptyConditionChannel", lock);
     ready = true;
 }
 
 Channel::~Channel() {
     delete lock;
-    delete condition;
+    delete full;
+    delete empty;
     delete name;
-    delete buffer;
 }
 
 const char *
@@ -25,24 +25,30 @@ Channel::GetName() const {
 void
 Channel::Send(int message) {
     lock->Acquire();
-    buffer = (int *)malloc(sizeof(int));
-    buffer[0] = message;
+    while (ready) {
+      empty->Wait();
+    }
+
+    printf("send %d\n", message);
+    buffer = message;
     ready = true;
-    // enviamos el mensaje y esperamos
-    condition->Wait();
+
+    full->Signal();
     lock->Release();
 }
 
 void
 Channel::Receive(int *message) {
     lock->Acquire();
-    if (!ready) {
-      condition->Wait();
+    while (!ready) {
+      full->Wait();
     }
-    // recibimos y notificamos ?
-    message = buffer;
+
+    printf("receive %d\n", buffer);
+
+    message[0] = buffer;
 
     ready = false;
-    condition->Signal();
+    empty->Signal();
     lock->Release();
 }

@@ -1,25 +1,25 @@
 #include "thread_test_channel.hh"
 Channel *canal = new Channel("canal");
 
-void send(void *arg) {
-  int buffer = 5;
+void
+send(void *arg) {
+  int buffer = 0;
   while(true) {
-    printf("send %d\n", buffer);
-    canal->Send(buffer);
+    canal->Send(buffer++);
   }
 }
 
-void receive(void *arg) {
-  int *buffer = NULL;
+void
+receive(void *arg) {
+  int buffer;
   while(true) {
-    canal->Receive(buffer);
-    printf("%d", buffer[0]);
-    // printf("receive %d\n", buffer[0]);
+    canal->Receive(&buffer);
   }
 }
 
 void ThreadTestChannel() {
   Thread *receiveThread = new Thread("receive");
-  receiveThread->Fork(receive, NULL);
-  send(NULL);
+  void * arg = NULL;
+  receiveThread->Fork(send, arg);
+  receive(arg);
 }

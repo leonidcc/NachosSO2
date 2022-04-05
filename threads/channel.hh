@@ -4,6 +4,7 @@
 #include "thread.hh"
 #include "condition.hh"
 #include <cstdlib>
+#include <stdio.h>
 #include <string.h>
 
 class Channel {
@@ -19,8 +20,9 @@ private:
     const char *name;
 
     Lock *lock;
-    Condition *condition;
-    int* buffer;
+    Condition *full;
+    Condition *empty;
+    int buffer;
     bool ready;
 };
 
