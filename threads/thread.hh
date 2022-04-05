@@ -128,6 +128,8 @@ public:
 
     void Print() const;
 
+    void Join();
+
 private:
     // Some of the private data for this class is listed above.
 

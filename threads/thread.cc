@@ -229,6 +229,11 @@ Thread::Sleep()
     scheduler->Run(nextThread);  // Returns when we have been signalled.
 }
 
+void
+Thread::Join() {
+
+}
+
 /// ThreadFinish, InterruptEnable
 ///
 /// Dummy functions because C++ does not allow a pointer to a member
