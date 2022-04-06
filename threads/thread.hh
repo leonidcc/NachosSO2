@@ -46,6 +46,9 @@
 #include "userprog/address_space.hh"
 #endif
 
+// preguntat px se rompe sin incluimos el .hh y con esto se soluciona
+class Channel;
+
 #include <stdint.h>
 
 
@@ -97,7 +100,7 @@ private:
 public:
 
     /// Initialize a `Thread`.
-    Thread(const char *debugName);
+    Thread(const char *debugName, bool joinable = false);
 
     /// Deallocate a Thread.
     ///
@@ -143,6 +146,9 @@ private:
 
     const char *name;
 
+    Channel *canal;
+
+    bool joinable;
     /// Allocate a stack for thread.  Used internally by `Fork`.
     void StackAllocate(VoidFunctionPtr func, void *arg);
 

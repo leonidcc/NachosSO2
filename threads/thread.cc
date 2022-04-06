@@ -21,6 +21,9 @@
 #include "switch.h"
 #include "system.hh"
 
+
+#include "channel.hh"
+
 #include <inttypes.h>
 #include <stdio.h>
 
@@ -29,6 +32,7 @@
 /// overflows.
 const unsigned STACK_FENCEPOST = 0xDEADBEEF;
 
+//Channel *canal = new Channel("canal");
 
 static inline bool
 IsThreadStatus(ThreadStatus s)
@@ -40,12 +44,17 @@ IsThreadStatus(ThreadStatus s)
 /// `Thread::Fork`.
 ///
 /// * `threadName` is an arbitrary string, useful for debugging.
-Thread::Thread(const char *threadName)
+Thread::Thread(const char *threadName, bool state)
 {
     name     = threadName;
     stackTop = nullptr;
     stack    = nullptr;
     status   = JUST_CREATED;
+    joinable = state;
+    if (joinable) {//create a channel to let the thread know when fork finishes
+      canal = new Channel("canal");
+    }
+
 #ifdef USER_PROGRAM
     space    = nullptr;
 #endif
@@ -161,6 +170,11 @@ Thread::Finish()
     DEBUG('t', "Finishing thread \"%s\"\n", GetName());
 
     threadToBeDestroyed = currentThread;
+
+    if (joinable){
+      int finished = 1;
+      canal->Send(finished);
+    }
     Sleep();  // Invokes `SWITCH`.
     // Not reached.
 }
@@ -231,7 +245,8 @@ Thread::Sleep()
 
 void
 Thread::Join() {
-
+    int finished = 0;
+    canal->Receive(&finished);
 }
 
 /// ThreadFinish, InterruptEnable
@@ -243,6 +258,7 @@ static void
 ThreadFinish()
 {
     currentThread->Finish();
+
 }
 
 static void

@@ -16,6 +16,7 @@
 #include "thread_test_simple.hh"
 #include "thread_test_garden_sem.hh"
 #include "thread_test_channel.hh"
+#include "thread_test_join.hh"
 #include "lib/utility.hh"
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,7 +34,8 @@ static const Test TESTS[] = {
     { &ThreadTestGarden,   "garden",   "Ornamental garden" },
     { &ThreadTestProdCons, "prodcons", "Producer/Consumer" },
     { &ThreadTestGardenSem, "gardenSem", "Ornamental garden with semaphores"},
-    { &ThreadTestChannel, "channel", "Channel test with 2 threads"}
+    { &ThreadTestChannel, "channel", "Channel test with 2 threads"},
+    { &ThreadTestJoin, "Join", "test with join threads"}
 };
 static const unsigned NUM_TESTS = sizeof TESTS / sizeof TESTS[0];
 
