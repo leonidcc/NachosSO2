@@ -20,7 +20,7 @@
 #include "thread.hh"
 #include "switch.h"
 #include "system.hh"
-
+#include "scheduler2.hh"
 
 #include "channel.hh"
 
@@ -44,13 +44,15 @@ IsThreadStatus(ThreadStatus s)
 /// `Thread::Fork`.
 ///
 /// * `threadName` is an arbitrary string, useful for debugging.
-Thread::Thread(const char *threadName, bool state)
+Thread::Thread(const char *threadName, bool state, int pr)
 {
     name     = threadName;
     stackTop = nullptr;
     stack    = nullptr;
     status   = JUST_CREATED;
     joinable = state;
+    priority = pr > NUM_COLAS || pr < 0 ? 0 : pr;
+
     if (joinable) {//create a channel to let the thread know when fork finishes
       canal = new Channel("canal");
     }
@@ -142,6 +144,12 @@ const char *
 Thread::GetName() const
 {
     return name;
+}
+
+int
+Thread::GetPriority()
+{
+    return priority;
 }
 
 void
