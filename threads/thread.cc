@@ -245,7 +245,7 @@ Thread::Sleep()
 
 void
 Thread::Join() {
-    int finished = 0;
+    int finished;
     canal->Receive(&finished);
 }
 

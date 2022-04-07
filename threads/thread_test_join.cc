@@ -14,7 +14,7 @@
 #include <stdio.h>
 
 void func(void* arg){
-  sleep(4);
+  sleep(1);
 }
 
 /// Loop 10 times, yielding the CPU to another ready thread each iteration.
@@ -22,10 +22,10 @@ void func(void* arg){
 /// * `name` points to a string with a thread name, just for debugging
 ///   purposes.
 void ThreadTestJoin(){
-  Thread *t = new Thread("Hijo");
+  Thread *t = new Thread("Hijo", true);
   void * arg = NULL;
   t->Fork(func, arg);
-  printf("bancandola\n");
+  printf("Esperando\n");
   t->Join();
-  printf("llegue \n");
+  printf("Llego\n");
 }

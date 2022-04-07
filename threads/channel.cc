@@ -7,7 +7,7 @@ Channel::Channel(const char *debugName) {
     // strcat((char*)debugName , "-conditionChannel"
     full = new Condition("fullConditionChannel", lock);
     empty = new Condition("emptyConditionChannel", lock);
-    ready = true;
+    ready = false;
 }
 
 Channel::~Channel() {
@@ -29,7 +29,8 @@ Channel::Send(int message) {
       empty->Wait();
     }
 
-    printf("send %d\n", message);
+    DEBUG('c', "Channel %s Send \"%d\"\n", GetName(), message);
+
     buffer = message;
     ready = true;
 
@@ -44,7 +45,7 @@ Channel::Receive(int *message) {
       full->Wait();
     }
 
-    printf("receive %d\n", buffer);
+    DEBUG('c', "Channel %s Receive \"%d\"\n", GetName(), *message);
 
     message[0] = buffer;
 
