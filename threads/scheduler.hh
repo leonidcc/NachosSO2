@@ -13,7 +13,7 @@
 
 #include "thread.hh"
 #include "lib/list.hh"
-
+#define NUM_COLAS 5
 
 /// The following class defines the scheduler/dispatcher abstraction --
 /// the data structures and operations needed to keep track of which
@@ -41,9 +41,7 @@ public:
 
 private:
 
-    // Queue of threads that are ready to run, but not running.
-    List<Thread*> *readyList;
-
+    List<Thread *> *queues[NUM_COLAS];
 };
 
 

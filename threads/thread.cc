@@ -20,7 +20,7 @@
 #include "thread.hh"
 #include "switch.h"
 #include "system.hh"
-#include "scheduler2.hh"
+#include "scheduler.hh"
 
 #include "channel.hh"
 
