@@ -1,0 +1,8 @@
+
+Ej 5 b)
+
+En los locks y variables de condición, es posible saber quien toma y
+libera un recurso por lo tanto podemos modificar su prioridad, con los
+semáforos no podemos saber quien libera el recurso, puesto que puede ser
+liberado por cualquiera que invoque V(), incluso si este no invoco a P(),
+por ésa razón no podemos saber a quien tenemos que modificar la prioridad.
