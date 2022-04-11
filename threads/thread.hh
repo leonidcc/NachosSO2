@@ -131,6 +131,10 @@ public:
 
     int GetPriority();
 
+    void ChangePriority(int p);
+
+    void BackupPriority();
+
     void Print() const;
 
     void Join();
@@ -153,6 +157,8 @@ private:
     bool joinable;
 
     int priority;
+
+    int backupPriority;
 
     /// Allocate a stack for thread.  Used internally by `Fork`.
     void StackAllocate(VoidFunctionPtr func, void *arg);

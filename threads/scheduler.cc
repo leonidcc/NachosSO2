@@ -146,10 +146,20 @@ ThreadPrint(Thread *t)
 void
 Scheduler::Print()
 {
-    printf("Ready list contents:\n");
+    printf("Ready list contents: \n");
     for (int i = 0; i < NUM_COLAS; i++) {
+      printf("queue-%d:", i);
       if (!queues[i]->IsEmpty()) {
           queues[i]->Apply(ThreadPrint);
       }
+      printf("\n");
     }
+    printf("\n");
+}
+
+void
+Scheduler::ChangePriority(Thread *thread, int priority)
+{
+  queues[thread->GetPriority()]->Remove(thread);
+  queues[priority]->Append(thread);
 }

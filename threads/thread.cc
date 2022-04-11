@@ -252,9 +252,30 @@ Thread::Sleep()
 }
 
 void
-Thread::Join() {
+Thread::Join()
+{
     int finished;
     canal->Receive(&finished);
+}
+
+void
+Thread::ChangePriority(int p)
+{
+  ASSERT(p > 0 && p < NUM_COLAS);
+  ASSERT(this != currentThread);
+
+  scheduler->ChangePriority(this, p);
+  backupPriority = this->priority;
+  priority = p;
+}
+
+
+void
+Thread::BackupPriority()
+{
+  scheduler->ChangePriority(this, backupPriority);
+  priority = backupPriority;
+  backupPriority = -1;
 }
 
 /// ThreadFinish, InterruptEnable

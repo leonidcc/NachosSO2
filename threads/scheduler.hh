@@ -36,6 +36,8 @@ public:
     /// Cause `nextThread` to start running.
     void Run(Thread *nextThread);
 
+    void ChangePriority(Thread *thread, int priority);
+    
     // Print contents of ready list.
     void Print();
 
