@@ -52,6 +52,9 @@ Thread::Thread(const char *threadName, bool state, int pr)
     status   = JUST_CREATED;
     joinable = state;
     priority = pr > NUM_COLAS || pr < 0 ? 0 : pr;
+    #ifdef USER_PROGRAM
+    files = new Table<OpenFile *>;
+    #endif
 
     if (joinable) {//create a channel to let the thread know when fork finishes
       canal = new Channel("canal");
@@ -150,6 +153,12 @@ int
 Thread::GetPriority()
 {
     return priority;
+}
+
+Table<OpenFile *> *
+Thread::GetOpenedFiles()
+{
+    return files;
 }
 
 void

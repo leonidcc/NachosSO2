@@ -2,20 +2,23 @@
 #define NACHOS_MACHINE_SYNCHCONSOLE__HH
 #include "console.hh"
 #include "../threads/semaphore.hh"
+#include "../threads/lock.hh"
 
 class SynchConsole {
     public:
         SynchConsole(const char *, const char *);
         ~SynchConsole();
 
-        static void ReadAvail(void *);
-        static void WriteDone(void *);
+        void ReadAvail(void *);
+        void WriteDone(void *);
         char GetChar();
         void PutChar();
     private:
-        static Console *console;
-        static Semaphore *readAvail;
-        static Semaphore *writeDone;
+        Console *console;
+        Semaphore *readAvail;
+        Semaphore *writeDone;
+        Lock *readLock;
+        Lock *writeLock;
 }
 
 #endif
