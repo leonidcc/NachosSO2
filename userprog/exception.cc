@@ -26,6 +26,7 @@
 #include "syscall.h"
 #include "filesys/directory_entry.hh"
 #include "threads/system.hh"
+#include "exception.hh"
 
 #include <stdio.h>
 
@@ -78,8 +79,6 @@ DefaultHandler(ExceptionType et)
 /// And do not forget to increment the program counter before returning. (Or
 /// else you will loop making the same system call forever!)
 
-SynchConsole synchconsole = new SynchConsole();
-
 static void
 SyscallHandler(ExceptionType _et)
 {
@@ -106,7 +105,7 @@ SyscallHandler(ExceptionType _et)
             }
 
             if (!fileSystem->Create(filename, 0)) {
-              DEBUG('e', "File creation failed. \n")
+              DEBUG('e', "File creation failed. \n");
             } else {
               DEBUG('e', "`Create` requested for file `%s`.\n", filename);
             }
@@ -127,9 +126,9 @@ SyscallHandler(ExceptionType _et)
             }
 
             if (!fileSystem->Remove(filename)) {
-                DEBUG('e', "File deletion failed. \n")
+                DEBUG('e', "File deletion failed. \n");
             } else {
-                DEBUG('e', "File removed succesfully. \n")
+                DEBUG('e', "File removed succesfully. \n");
             }
             break;
         }
@@ -139,8 +138,8 @@ SyscallHandler(ExceptionType _et)
 
             DEBUG('e', "Program exited with status %d \n", status);
 
-            currentThread->Finish(status);
-
+            currentThread->Finish();
+            
             break;
         }
 
@@ -167,8 +166,11 @@ SyscallHandler(ExceptionType _et)
             char buffer[size+1];
             int counter = 0;
             if (id == CONSOLE_INPUT) {
-                for (;counter < size && c != '\n'; counter++) {
+                for (;counter < size; counter++) {
                     char c = synchConsole->GetChar();
+                    if (c == '\n') {
+                        break;
+                    }
                     buffer[counter] = c;
                 }
                 buffer[counter] = '\0';
@@ -182,7 +184,7 @@ SyscallHandler(ExceptionType _et)
             break;
         }
 
-        case SC_WRITE:
+        case SC_WRITE: {
             int usrStringAddr = machine->ReadRegister(4);
             if (usrStringAddr == 0) {
                 DEBUG('e', "User string address is null\n");
@@ -216,6 +218,7 @@ SyscallHandler(ExceptionType _et)
 
             machine->WriteRegister(2, -1);
             break;
+        }
 
         case SC_OPEN: {
             int nameAddr = machine->ReadRegister(4);
@@ -262,7 +265,7 @@ SyscallHandler(ExceptionType _et)
                 break;
             }
 
-            OpenFile file* = currentThread->GetOpenedFiles()->Remove(fid);
+            OpenFile *file = currentThread->GetOpenedFiles()->Remove(fid);
 
             if (file != nullptr) {
                 delete file;
@@ -273,11 +276,10 @@ SyscallHandler(ExceptionType _et)
             }
             break;
         }
-
-        default:
+        default: {
             fprintf(stderr, "Unexpected system call: id %d.\n", scid);
             ASSERT(false);
-
+        }
     }
 
     IncrementPC();
