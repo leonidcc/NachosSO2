@@ -40,6 +40,8 @@
 
 
 #include "lib/utility.hh"
+#include "lib/table.hh"
+#include "filesys/open_file.hh"
 
 #ifdef USER_PROGRAM
 #include "machine/machine.hh"
@@ -131,7 +133,7 @@ public:
 
     int GetPriority();
 
-    Table<OpenFile *> GetOpenedFiles();
+    Table<OpenFile *>* GetOpenedFiles();
     
     void ChangePriority(int p);
 
