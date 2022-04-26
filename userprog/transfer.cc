@@ -23,7 +23,7 @@ void ReadBufferFromUser(int userAddress, char *outBuffer,
       *outBuffer++;
   } while (count < byteCount);
 
-  return *(outBuffer - 1) == '\0';
+  return ;
 }
 
 bool ReadStringFromUser(int userAddress, char *outString,
@@ -64,8 +64,8 @@ void WriteStringToUser(const char *string, int userAddress)
     ASSERT(string != nullptr);
     ASSERT(userAddress != 0);
 
-    while (*buffer != '\0') {
-        ASSERT(machine->WriteMem(userAddress, 1, *buffer));
-        *buffer++;
+    while (*string != '\0') {
+        ASSERT(machine->WriteMem(userAddress, 1, *string));
+        *string++;
     }
 }
