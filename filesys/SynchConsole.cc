@@ -22,7 +22,7 @@ SynchConsole::SynchConsole(const char *in, const char *out)
     this->readAvail = new Semaphore("read avail", 0);
     this->writeDone = new Semaphore("write done", 0);
     this->readLock = new Lock("read lock");
-    this->writeLock = new Lock("write lock")
+    this->writeLock = new Lock("write lock");
 }
 
 SynchConsole::~SynchConsole()
@@ -34,14 +34,14 @@ SynchConsole::~SynchConsole()
     delete writeLock;
 }
 
-static void
-SynchConsole::ReadAvail(void * p)
+void
+SynchConsole::ReadAvail()
 {
     readAvail->V();
 }
 
-static void
-SynchConsole::WriteDone(void * p)
+void
+SynchConsole::WriteDone()
 {
     writeDone->V();
 }
