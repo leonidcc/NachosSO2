@@ -12,7 +12,9 @@
 #ifdef USER_PROGRAM
 #include "userprog/debugger.hh"
 #include "userprog/exception.hh"
+
 #endif
+
 
 #include <stdlib.h>
 #include <string.h>
@@ -40,6 +42,7 @@ FileSystem *fileSystem;
 
 #ifdef FILESYS
 SynchDisk *synchDisk;
+SynchConsole *synchConsole;
 #endif
 
 #ifdef USER_PROGRAM  // Requires either *FILESYS* or *FILESYS_STUB*.
@@ -231,7 +234,10 @@ Initialize(int argc, char **argv)
     SetExceptionHandlers();
 #endif
 
+
+
 #ifdef FILESYS
+    synchConsole = new SynchConsole();
     synchDisk = new SynchDisk("DISK");
 #endif
 

@@ -131,6 +131,48 @@ SyscallHandler(ExceptionType _et)
              break;
          }
 
+         case SC_READ: {
+            int usrStringAddr = machine->ReadRegister(4);
+            if (usrStringAddr == 0) {
+                DEBUG('e', "User string address is null\n");
+                machine->WriteRegister(2, -1);
+                break;
+            }
+            int size = machine->ReadRegister(5);
+            if (size <= 0) {
+                DEBUG('e', "Invalid size\n");
+                machine->WriteRegister(2, -1);
+                break;
+            }
+            int id = machine->ReadRegister(6);
+            if (id < 0) {
+                DEBUG('e', "Invalid file descriptor id\n");
+                machine->WriteRegister(2, -1);
+                break;
+            }
+
+            char buffer[size+1];
+            int counter = 0;
+            
+            if (id == CONSOLE_INPUT) {
+                for (;counter < size; counter++) {
+                    char c = synchConsole->GetChar();
+                    if (c == '\n') {
+                        break;
+                    }
+                    buffer[counter] = c;
+                }
+                buffer[counter] = '\0';
+                WriteBufferToUser(buffer, usrStringAddr, size);
+                machine->WriteRegister(2, counter);
+                break;
+            }
+            // leer de archivo
+
+            machine->WriteRegister(2, -1);
+            break;
+        }
+
 
         case SC_EXIT: {
             int status = machine->ReadRegister(4);
