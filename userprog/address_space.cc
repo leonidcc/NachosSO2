@@ -42,8 +42,10 @@ AddressSpace::AddressSpace(OpenFile *executable_file)
     pageTable = new TranslationEntry[numPages];
     for (unsigned i = 0; i < numPages; i++) {
         pageTable[i].virtualPage  = i;
-          // For now, virtual page number = physical page number.
-        pageTable[i].physicalPage = i;
+        // For now, virtual page number = physical page number.
+        unsigned FPNumber = bitmap->Find();
+        ASSERT(FPNumber >= 0);
+        pageTable[i].physicalPage = FPNumber;
         pageTable[i].valid        = true;
         pageTable[i].use          = false;
         pageTable[i].dirty        = false;

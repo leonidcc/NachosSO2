@@ -22,13 +22,14 @@
 /// limitation of liability and disclaimer of warranty provisions.
 
 
+#include <stdio.h>
 #include "transfer.hh"
 #include "syscall.h"
+#include "args.hh"
 #include "filesys/directory_entry.hh"
+#include "filesys/open_file.hh"
 #include "threads/system.hh"
-
-#include <stdio.h>
-
+#include "exception.hh"
 
 static void
 IncrementPC()
@@ -303,6 +304,50 @@ SyscallHandler(ExceptionType _et)
         }
 
         case SC_EXEC: {
+            int nameAddr = machine->ReadRegister(4);
+            int argvAddr = machine->ReadRegister(5);
+            bool isJoinable = (bool)machine->ReadRegister(6);
+            char **argv = nullptr;
+
+            if (nameAddr == 0) {
+                DEBUG('e', "Invalid address\n");
+                machine->WriteRegister(2, -1);
+                break;
+            }
+
+            char buffer[FILE_NAME_MAX_LEN+1];
+            if(!ReadStringFromUser(nameAddr, buffer, sizeof buffer)) {
+                DEBUG('e', "Read string error\n");
+                machine->WriteRegister(2, -1);
+                break;
+            }
+
+            if (argvAddr) {
+                DEBUG('e', "argvAddr distinto de cero, con direccion: %d\n", argvAddr);
+                argv = SaveArgs(argvAddr);
+            }
+
+            OpenFile *executable = fileSystem->Open(buffer);
+            if (executable == nullptr) {
+                DEBUG('e', "Unable to open file %s\n", buffer);
+                machine->WriteRegister(2, -1);
+                break;
+            }
+
+            Thread *newThread = new Thread(buffer, isJoinable);
+
+            SpaceId id = (SpaceId)runningProcesses->Add(newThread);
+            // asignar a thread el Id
+
+            AddressSpace *space = new AddressSpace(executable);
+
+            newThread->space = space;
+            delete executable;
+
+            // crear funcion StartProcess
+            newThread->Fork(StartProcess, (void *) argv);
+            machine->WriteRegister(2, id);
+
             break;
         }
 

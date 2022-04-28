@@ -15,6 +15,7 @@
 #include "machine/interrupt.hh"
 #include "machine/statistics.hh"
 #include "machine/timer.hh"
+#include "lib/bitmap.hh"
 
 /// Initialization and cleanup routines.
 
@@ -37,6 +38,8 @@ extern Timer *timer;                 ///< The hardware alarm clock.
 extern Machine *machine;  // User program memory and registers.
 #include "filesys/synch_console.hh"
 extern SynchConsole *synchConsole;
+extern Table<Thread *> *runningProcesses;
+extern Bitmap *bitmap;
 #endif
 
 #ifdef FILESYS_NEEDED  // *FILESYS* or *FILESYS_STUB*.

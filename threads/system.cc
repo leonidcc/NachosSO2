@@ -12,7 +12,7 @@
 #ifdef USER_PROGRAM
 #include "userprog/debugger.hh"
 #include "userprog/exception.hh"
-
+#include "machine/mmu.hh"
 #endif
 
 
@@ -46,6 +46,8 @@ SynchDisk *synchDisk;
 
 #ifdef USER_PROGRAM  // Requires either *FILESYS* or *FILESYS_STUB*.
 Machine *machine;  ///< User program memory and registers.
+Bitmap *bitmap;
+Table<Thread *> *runningProcesses;
 SynchConsole *synchConsole;
 #endif
 
@@ -231,8 +233,11 @@ Initialize(int argc, char **argv)
 #ifdef USER_PROGRAM
     Debugger *d = debugUserProg ? new Debugger : nullptr;
     machine = new Machine(d);  // This must come first.
+    bitmap = new Bitmap(NUM_PHYS_PAGES);
+
     SetExceptionHandlers();
     synchConsole = new SynchConsole();
+    runningProcesses = new Table<Thread *>;
 #endif
 
 
@@ -265,7 +270,9 @@ Cleanup()
 
 #ifdef USER_PROGRAM
     delete machine;
+    delete bitmap;
     delete synchConsole;
+    delete runningProcesses;
 #endif
 
 #ifdef FILESYS_NEEDED
