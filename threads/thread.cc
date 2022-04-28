@@ -58,7 +58,8 @@ Thread::Thread(const char *threadName, bool state, int pr)
     }
 
 #ifdef USER_PROGRAM
-    space    = nullptr;
+    files = new Table<OpenFile *>;
+    space = nullptr;
 #endif
 }
 
@@ -150,6 +151,12 @@ int
 Thread::GetPriority()
 {
     return priority;
+}
+
+Table<OpenFile *>*
+Thread::GetOpenedFiles()
+{
+    return files;
 }
 
 void
