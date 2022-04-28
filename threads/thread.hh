@@ -41,6 +41,10 @@
 
 #include "lib/utility.hh"
 #include "lib/table.hh"
+<<<<<<< HEAD
+=======
+#include "filesys/open_file.hh"
+>>>>>>> 274a6bda418e3abdfdd25ba8ba1de22093559a29
 
 #ifdef USER_PROGRAM
 #include "machine/machine.hh"
@@ -132,6 +136,8 @@ public:
 
     int GetPriority();
 
+    Table<OpenFile *>* GetOpenedFiles();
+
     void ChangePriority(int p);
 
     void BackupPriority();
@@ -160,6 +166,8 @@ private:
     int priority;
 
     int backupPriority;
+
+    Table<OpenFile *> *files;
 
     /// Allocate a stack for thread.  Used internally by `Fork`.
     void StackAllocate(VoidFunctionPtr func, void *arg);
