@@ -40,6 +40,7 @@
 
 
 #include "lib/utility.hh"
+#include "lib/table.hh"
 
 #ifdef USER_PROGRAM
 #include "machine/machine.hh"
@@ -181,6 +182,9 @@ public:
 
     // User code this thread is running.
     AddressSpace *space;
+
+    // cada hilo dispone de su propia tabla de archivosabiertos.
+    Table<OpenFile *> *openFilesTable;
 #endif
 };
 

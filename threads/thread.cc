@@ -58,7 +58,8 @@ Thread::Thread(const char *threadName, bool state, int pr)
     }
 
 #ifdef USER_PROGRAM
-    space    = nullptr;
+    space    = nullptr;    
+    openFilesTable = new Table<OpenFile *>;
 #endif
 }
 
