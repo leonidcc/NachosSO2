@@ -26,7 +26,6 @@
 #include "syscall.h"
 #include "filesys/directory_entry.hh"
 #include "threads/system.hh"
-#include "exception.hh"
 
 #include <stdio.h>
 
@@ -78,7 +77,6 @@ DefaultHandler(ExceptionType et)
 ///
 /// And do not forget to increment the program counter before returning. (Or
 /// else you will loop making the same system call forever!)
-
 static void
 SyscallHandler(ExceptionType _et)
 {
@@ -113,37 +111,73 @@ SyscallHandler(ExceptionType _et)
         }
 
         case SC_REMOVE: {
-            int filenameAddr = machine->ReadRegister(4);
-            if (filenameAddr == 0) {
-                DEBUG('e', "Error: address to filename string is null.\n");
-            }
+             int filenameAddr = machine->ReadRegister(4);
+             if (filenameAddr == 0) {
+                 DEBUG('e', "Error: address to filename string is null.\n");
+             }
 
-            char filename[FILE_NAME_MAX_LEN + 1];
-            if (!ReadStringFromUser(filenameAddr,
-                                    filename, sizeof filename)) {
-                DEBUG('e', "Error: filename string too long (maximum is %u bytes).\n",
-                      FILE_NAME_MAX_LEN);
-            }
+             char filename[FILE_NAME_MAX_LEN + 1];
+             if (!ReadStringFromUser(filenameAddr,
+                                     filename, sizeof filename)) {
+                 DEBUG('e', "Error: filename string too long (maximum is %u bytes).\n",
+                       FILE_NAME_MAX_LEN);
+             }
 
-            if (!fileSystem->Remove(filename)) {
-                DEBUG('e', "File deletion failed. \n");
-            } else {
-                DEBUG('e', "File removed succesfully. \n");
-            }
-            break;
-        }
+             if (!fileSystem->Remove(filename)) {
+                 DEBUG('e', "File deletion failed. \n");
+             } else {
+                 DEBUG('e', "File removed succesfully. \n");
+             }
+             break;
+         }
 
-        case SC_EXIT: {
-            int status = machine->ReadRegister(4);
+         case SC_WRITE: {
+             int usrStringAddr = machine->ReadRegister(4);
+             if (usrStringAddr == 0) {
+                 DEBUG('e', "User string address is null\n");
+                 machine->WriteRegister(2, -1);
+                 break;
+             }
+             int size = machine->ReadRegister(5);
+             if (size <= 0) {
+                 DEBUG('e', "Invalid size\n");
+                 machine->WriteRegister(2, -1);
+                 break;
+             }
+             int id = machine->ReadRegister(6);
+             if (id < 0) {
+                 DEBUG('e', "Invalid file descriptor id\n");
+                 machine->WriteRegister(2, -1);
+                 break;
+             }
 
-            DEBUG('e', "Program exited with status %d \n", status);
+             char buffer[size+1];
+             int counter = 0;
+             if (id == CONSOLE_INPUT) {
+                 ReadBufferFromUser(usrStringAddr, buffer, size);
+                 for (; counter < size; counter++) {
+                     synchConsole->PutChar(buffer[counter]);
+                 }
+                 machine->WriteRegister(2, counter);
+                 break;
+             } else {
+                 OpenFile* file = currentThread->GetOpenedFiles()->Get(id);
+                 if (file != nullptr) {
+                     ReadBufferFromUser(usrStringAddr, buffer, size);
+                     counter = file->Write(buffer, size);
+                     machine->WriteRegister(2, counter);
+                     break;
+                 } else {
+                     DEBUG('e', "No matching file with id %d\n", id);
+                     machine->WriteRegister(2, -1);
+                     break;
+                 }
+             }
+             machine->WriteRegister(2, -1);
+             break;
+         }
 
-            currentThread->Finish();
-            
-            break;
-        }
-
-        case SC_READ: {
+         case SC_READ: {
             int usrStringAddr = machine->ReadRegister(4);
             if (usrStringAddr == 0) {
                 DEBUG('e', "User string address is null\n");
@@ -165,6 +199,7 @@ SyscallHandler(ExceptionType _et)
 
             char buffer[size+1];
             int counter = 0;
+
             if (id == CONSOLE_INPUT) {
                 for (;counter < size; counter++) {
                     char c = synchConsole->GetChar();
@@ -177,46 +212,31 @@ SyscallHandler(ExceptionType _et)
                 WriteBufferToUser(buffer, usrStringAddr, size);
                 machine->WriteRegister(2, counter);
                 break;
+            } else {
+                OpenFile* file = currentThread->GetOpenedFiles()->Get(id);
+                if (file != nullptr) {
+                    counter = file->Read(buffer, size);
+                    machine->WriteRegister(2, counter);
+                    break;
+                } else {
+                    DEBUG('e', "No matching file with id %d\n", id);
+                    machine->WriteRegister(2, -1);
+                    break;
+                }
             }
-            // leer de archivo
 
             machine->WriteRegister(2, -1);
             break;
         }
 
-        case SC_WRITE: {
-            int usrStringAddr = machine->ReadRegister(4);
-            if (usrStringAddr == 0) {
-                DEBUG('e', "User string address is null\n");
-                machine->WriteRegister(2, -1);
-                break;
-            }
-            int size = machine->ReadRegister(5);
-            if (size <= 0) {
-                DEBUG('e', "Invalid size\n");
-                machine->WriteRegister(2, -1);
-                break;
-            }
-            int id = machine->ReadRegister(6);
-            if (id < 0) {
-                DEBUG('e', "Invalid file descriptor id\n");
-                machine->WriteRegister(2, -1);
-                break;
-            }
 
-            char buffer[size+1];
-            int counter = 0;
-            if (id == CONSOLE_INPUT) {
-                ReadBufferFromUser(usrStringAddr, buffer, size);
-                for (; counter < size; counter++) {
-                    synchConsole->PutChar(buffer[counter]);
-                }
-                machine->WriteRegister(2, counter);
-                break;
-            }
-            // escribir a archivo
+        case SC_EXIT: {
+            int status = machine->ReadRegister(4);
 
-            machine->WriteRegister(2, -1);
+            DEBUG('e', "Program exited with status %d \n", status);
+
+            currentThread->Finish();
+
             break;
         }
 
@@ -255,6 +275,7 @@ SyscallHandler(ExceptionType _et)
             machine->WriteRegister(2, openFileId);
             break;
         }
+
         case SC_CLOSE: {
             int fid = machine->ReadRegister(4);
             DEBUG('e', "`Close` requested for id %u.\n", fid);
@@ -276,12 +297,19 @@ SyscallHandler(ExceptionType _et)
             }
             break;
         }
-        default: {
+
+        case SC_JOIN: {
+            break;
+        }
+
+        case SC_EXEC: {
+            break;
+        }
+
+        default:
             fprintf(stderr, "Unexpected system call: id %d.\n", scid);
             ASSERT(false);
-        }
     }
-
     IncrementPC();
 }
 
