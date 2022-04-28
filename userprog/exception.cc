@@ -221,42 +221,7 @@ SyscallHandler(ExceptionType _et)
             break;
         }
 
-        case SC_OPEN: {
-            int nameAddr = machine->ReadRegister(4);
-            if (nameAddr == 0) {
-                DEBUG('e', "Invalid address\n");
-                machine->WriteRegister(2, -1);
-                break;
-            }
-
-            char buffer[FILE_NAME_MAX_LEN+1];
-            if(!ReadStringFromUser(nameAddr, buffer, sizeof buffer)) {
-                DEBUG('e', "Read string error\n");
-                machine->WriteRegister(2, -1);
-                break;
-            }
-
-            OpenFile *file = fileSystem->Open(buffer);
-
-            if (file == nullptr) {
-                DEBUG('e', "Invalid file name\n");
-                machine->WriteRegister(2, -1);
-                break;
-            }
-
-            int openFileId = currentThread->GetOpenedFiles()->Add(file);
-
-            if (openFileId == -1) {
-                DEBUG('e', "Full table\n");
-                delete file;
-                machine->WriteRegister(2, -1);
-                break;
-            }
-
-            machine->WriteRegister(2, openFileId);
-            break;
-        }
-
+     
         case SC_WRITE: {
             int usrStringAddr = machine->ReadRegister(4);
             if (usrStringAddr == 0) {
@@ -296,7 +261,6 @@ SyscallHandler(ExceptionType _et)
         case SC_CLOSE: {
             int fid = machine->ReadRegister(4);
             DEBUG('e', "`Close` requested for id %u.\n", fid);
-<<<<<<< HEAD
             if (fid < 2) {
                 DEBUG('e', "Error: file id must be greater than or equal to 2.\n");
                 machine->WriteRegister(2, -1);
@@ -309,22 +273,6 @@ SyscallHandler(ExceptionType _et)
             }
             else {
                 DEBUG('e', "Error: could not close file with id %u.\n", fid);
-=======
-
-            if (fid < 2) {
-                DEBUG('e', "Invalid file descriptor id\n");
-                machine->WriteRegister(2, -1);
-                break;
-            }
-
-            OpenFile *file = currentThread->GetOpenedFiles()->Remove(fid);
-
-            if (file != nullptr) {
-                delete file;
-                machine->WriteRegister(2, 0);
-            } else {
-                DEBUG('e', "File doesn't match this id: %d\n", fid);
->>>>>>> 274a6bda418e3abdfdd25ba8ba1de22093559a29
                 machine->WriteRegister(2, -1);
             }
             break;

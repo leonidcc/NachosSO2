@@ -57,14 +57,9 @@ Thread::Thread(const char *threadName, bool state, int pr)
       canal = new Channel("canal");
     }
 
-#ifdef USER_PROGRAM
-<<<<<<< HEAD
-    space    = nullptr;    
+#ifdef USER_PROGRAM 
+    space    = nullptr;
     openFilesTable = new Table<OpenFile *>;
-=======
-    files = new Table<OpenFile *>;
-    space = nullptr;
->>>>>>> 274a6bda418e3abdfdd25ba8ba1de22093559a29
 #endif
 }
 
