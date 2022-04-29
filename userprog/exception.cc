@@ -62,6 +62,45 @@ DefaultHandler(ExceptionType et)
     ASSERT(false);
 }
 
+/// Runs an user program.
+/// Opens the exec, loads it into the memory, and jumps into it.
+
+static void
+StartProcess(void * voidargv)
+{
+
+    char** argv = (char**)voidargv;
+
+    currentThread->space->InitRegisters();  // Set the initial register values.
+    
+    currentThread->space->RestoreState();   // Load page table register.
+
+    unsigned argc = 0;
+
+    if(argv != nullptr) {
+        argc = WriteArgs(argv); //libera la memoria de argv
+        DEBUG('e', "argv is not null and argc is: %d \n", argc);
+
+        if(argc) {
+            //Load a1 register (5)
+            int argvaddr = machine->ReadRegister(STACK_REG);
+            //Lo ultimo que hace WriteArgs es dejar el sp dentro de STACK_REG
+            //luego de haber cargado todos los argumentos.
+            machine->WriteRegister(STACK_REG, argvaddr - 24); //convencion de MIPS, restandole 24 seteo el stack pointer 24 bytes más abajo.
+
+            DEBUG('e', "argvaddr is: %d\n", argvaddr);
+            machine->WriteRegister(5, argvaddr);
+        }
+    } else {
+        DEBUG('e', "argvaddr is null!: %p\n", argv);
+    }
+
+    machine->WriteRegister(4, argc);
+
+    machine->Run();  // Jump to the user progam.
+    ASSERT(false);   // `machine->Run` never returns; the address space
+                    // exits by doing the system call `Exit`.
+}
 /// Handle a system call exception.
 ///
 /// * `et` is the kind of exception.  The list of possible exceptions is in
@@ -300,6 +339,18 @@ SyscallHandler(ExceptionType _et)
         }
 
         case SC_JOIN: {
+            SpaceId spaceId = machine->ReadRegister(4);
+
+            if(!runningProcesses->HasKey(spaceId)){
+                DEBUG('e',"Error en Join: id del proceso inexistente");
+                machine->WriteRegister(2, -1);
+                break;
+            }
+
+            Thread* pr = runningProcesses->Get(spaceId);
+            pr->Join();
+
+            machine->WriteRegister(2, 0);
             break;
         }
 
