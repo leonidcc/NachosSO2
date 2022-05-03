@@ -133,7 +133,6 @@ public:
 
     int GetPriority();
 
-    Table<OpenFile *>* GetOpenedFiles();
 
     void ChangePriority(int p);
 
@@ -164,7 +163,7 @@ private:
 
     int backupPriority;
 
-    Table<OpenFile *> *files;
+
 
     /// Allocate a stack for thread.  Used internally by `Fork`.
     void StackAllocate(VoidFunctionPtr func, void *arg);
@@ -187,6 +186,8 @@ public:
 
     // User code this thread is running.
     AddressSpace *space;
+
+    Table<OpenFile *> *files;
 #endif
 };
 
