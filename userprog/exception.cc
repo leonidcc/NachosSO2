@@ -145,7 +145,7 @@ SyscallHandler(ExceptionType _et)
                 machine->WriteRegister(2, -1);
                   break;
             }
-            printf("%s\n",filename);
+
             if (!fileSystem->Create(filename, 100)) {
               DEBUG('e', "File creation failed. \n");
               machine->WriteRegister(2, 1);
@@ -160,6 +160,8 @@ SyscallHandler(ExceptionType _et)
              int filenameAddr = machine->ReadRegister(4);
              if (filenameAddr == 0) {
                  DEBUG('e', "Error: address to filename string is null.\n");
+                 machine->WriteRegister(2, -1);
+                 break;
              }
 
              char filename[FILE_NAME_MAX_LEN + 1];
@@ -167,12 +169,16 @@ SyscallHandler(ExceptionType _et)
                                      filename, sizeof filename)) {
                  DEBUG('e', "Error: filename string too long (maximum is %u bytes).\n",
                        FILE_NAME_MAX_LEN);
+                 machine->WriteRegister(2, -1);
+                 break;
              }
 
              if (!fileSystem->Remove(filename)) {
                  DEBUG('e', "File deletion failed. \n");
+                 machine->WriteRegister(2, -1);
              } else {
                  DEBUG('e', "File removed succesfully. \n");
+                 machine->WriteRegister(2, 0);
              }
              break;
          }
