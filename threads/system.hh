@@ -39,7 +39,7 @@ extern Machine *machine;  // User program memory and registers.
 #include "filesys/synch_console.hh"
 extern SynchConsole *synchConsole;
 extern Table<Thread *> *runningProcesses;
-extern Bitmap *bitmap;
+extern Bitmap *pagesInUse;
 #endif
 
 #ifdef FILESYS_NEEDED  // *FILESYS* or *FILESYS_STUB*.
