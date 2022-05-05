@@ -33,6 +33,7 @@ vmem/switch*.s
 vmem/*.o
 
 
+userland/generaltest
 userland/echo
 userland/tiny_shell
 userland/touch
