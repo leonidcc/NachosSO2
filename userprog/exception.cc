@@ -199,7 +199,7 @@ SyscallHandler(ExceptionType _et)
 
              char buffer[size+1];
              int counter = 0;
-             if (id == CONSOLE_INPUT) {
+             if (id == CONSOLE_INPUT) {//quick fix
                  ReadBufferFromUser(usrStringAddr, buffer, size);
                  for (; counter < size; counter++) {
                      synchConsole->PutChar(buffer[counter]);
@@ -207,7 +207,7 @@ SyscallHandler(ExceptionType _et)
                  machine->WriteRegister(2, counter);
                  break;
              } else {
-                 OpenFile* file = currentThread->GetOpenedFiles()->Get(id);
+                 OpenFile* file = currentThread->files->Get(id);
                  if (file != nullptr) {
                      ReadBufferFromUser(usrStringAddr, buffer, size);
                      counter = file->Write(buffer, size);
@@ -259,7 +259,7 @@ SyscallHandler(ExceptionType _et)
                 machine->WriteRegister(2, counter);
                 break;
             } else {
-                OpenFile* file = currentThread->GetOpenedFiles()->Get(id);
+                OpenFile* file = currentThread->files->Get(id);
                 if (file != nullptr) {
                     counter = file->Read(buffer, size);
                     machine->WriteRegister(2, counter);
@@ -309,7 +309,7 @@ SyscallHandler(ExceptionType _et)
                 break;
             }
 
-            int openFileId = currentThread->GetOpenedFiles()->Add(file);
+            OpenFileId openFileId = currentThread->files->Add(file);
 
             if (openFileId == -1) {
                 DEBUG('e', "Full table\n");
@@ -332,7 +332,7 @@ SyscallHandler(ExceptionType _et)
                 break;
             }
 
-            OpenFile *file = currentThread->GetOpenedFiles()->Remove(fid);
+            OpenFile *file = currentThread->files->Remove(fid);
 
             if (file != nullptr) {
                 delete file;
@@ -385,6 +385,7 @@ SyscallHandler(ExceptionType _et)
             }
 
             OpenFile *executable = fileSystem->Open(buffer);
+            printf("buffer _____%s\n",buffer );
             if (executable == nullptr) {
                 DEBUG('e', "Unable to open file %s\n", buffer);
                 machine->WriteRegister(2, -1);
