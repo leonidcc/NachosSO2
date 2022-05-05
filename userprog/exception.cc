@@ -204,18 +204,20 @@ SyscallHandler(ExceptionType _et)
              }
 
              char buffer[size+1];
+             ReadBufferFromUser(usrStringAddr, buffer, size);
+             buffer[size] = '\0';
              int counter = 0;
-             if (id == CONSOLE_INPUT) {//quick fix
+             if (id == CONSOLE_OUTPUT) {
+                 DEBUG('e', "`Write` requested to console output.\n");
                  ReadBufferFromUser(usrStringAddr, buffer, size);
                  for (; counter < size; counter++) {
-                     synchConsole->PutChar(buffer[counter]);
+                     synchConsole->WriteChar(buffer[counter]);
                  }
                  machine->WriteRegister(2, counter);
                  break;
              } else {
                  OpenFile* file = currentThread->files->Get(id);
                  if (file != nullptr) {
-                     ReadBufferFromUser(usrStringAddr, buffer, size);
                      counter = file->Write(buffer, size);
                      machine->WriteRegister(2, counter);
                      break;
@@ -225,7 +227,10 @@ SyscallHandler(ExceptionType _et)
                      break;
                  }
              }
-             machine->WriteRegister(2, -1);
+             if (counter == size)
+                    machine->WriteRegister(2, 0);
+             else
+                  machine->WriteRegister(2, -1);
              break;
          }
 
@@ -254,7 +259,7 @@ SyscallHandler(ExceptionType _et)
 
             if (id == CONSOLE_INPUT) {
                 for (;counter < size; counter++) {
-                    char c = synchConsole->GetChar();
+                    char c = synchConsole->ReadChar();
                     if (c == '\n') {
                         break;
                     }
