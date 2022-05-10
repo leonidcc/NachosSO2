@@ -134,6 +134,7 @@ Initialize(int argc, char **argv)
     const char *debugFlags = "";
     DebugOpts debugOpts;
     bool randomYield = false;
+    bool timeSliceDef = false;
 
     // 2007, Jose Miguel Santos Espino
     bool preemptiveScheduling = false;
@@ -167,8 +168,12 @@ Initialize(int argc, char **argv)
         } else if (!strcmp(*argv, "-rs")) {
             ASSERT(argc > 1);
             SystemDep::RandomInit(atoi(*(argv + 1)));
-              // Initialize pseudo-random number generator.
+            // Initialize pseudo-random number generator.
             randomYield = true;
+            argCount = 2;
+        } else if (!strcmp(*argv, "-ts")) {
+            ASSERT(argc > 1);
+            timeSliceDef = true;
             argCount = 2;
         }
         // 2007, Jose Miguel Santos Espino
@@ -211,6 +216,9 @@ Initialize(int argc, char **argv)
     scheduler = new Scheduler;   // Initialize the ready queue.
     if (randomYield) {           // Start the timer (if needed).
         timer = new Timer(TimerInterruptHandler, 0, randomYield);
+    }
+    if (timeSliceDef) {
+        timer = new Timer(TimerInterruptHandler, 0, false);
     }
 
     threadToBeDestroyed = nullptr;

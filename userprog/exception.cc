@@ -285,7 +285,7 @@ SyscallHandler(ExceptionType _et)
                     break;
                 }
             }
- 
+
             break;
         }
 
@@ -399,7 +399,7 @@ SyscallHandler(ExceptionType _et)
             }
 
             OpenFile *executable = fileSystem->Open(buffer);
-            printf("buffer _____%s\n",buffer );
+
             if (executable == nullptr) {
                 DEBUG('e', "Unable to open file %s\n", buffer);
                 machine->WriteRegister(2, -1);
@@ -409,14 +409,12 @@ SyscallHandler(ExceptionType _et)
             Thread *newThread = new Thread(buffer, isJoinable);
 
             SpaceId id = (SpaceId)runningProcesses->Add(newThread);
-            // asignar a thread el Id
 
             AddressSpace *space = new AddressSpace(executable);
 
             newThread->space = space;
             delete executable;
 
-            // crear funcion StartProcess
             newThread->Fork(StartProcess, (void *) argv);
             machine->WriteRegister(2, id);
 

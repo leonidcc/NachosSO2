@@ -20,7 +20,6 @@
 #ifndef NACHOS_MACHINE_TIMER__HH
 #define NACHOS_MACHINE_TIMER__HH
 
-
 #include "lib/utility.hh"
 
 

@@ -30,8 +30,8 @@ public:
 
     /// Called by the disk device interrupt handler, to signal that the
     /// current disk operation is complete.
-  void ReadAvail();
-  void WriteDone();
+    void ReadAvail();
+    void WriteDone();
 
 private:
     Console *console; ///< Raw disk device.
