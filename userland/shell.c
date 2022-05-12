@@ -98,6 +98,13 @@ PrepareArguments(char *line, char **argv, unsigned argvSize)
 }
 
 int
+CheckBackground(char *s)
+{
+    int n = strlen(s);
+    return s[n-1] == '&';
+}
+
+int
 main(void)
 {
     const OpenFileId INPUT  = CONSOLE_INPUT;
@@ -108,6 +115,7 @@ main(void)
     for (;;) {
         WritePrompt(OUTPUT);
         const unsigned lineSize = ReadLine(line, MAX_LINE_SIZE, INPUT);
+        const int background = CheckBackground(line);
         if (lineSize == 0) {
             continue;
         }
@@ -125,7 +133,9 @@ main(void)
         // TODO: check for errors when calling `Exec`; this depends on how
         //       errors are reported.
 
-        Join(newProc);
+        if (!background) {
+            Join(newProc);
+        }
         // TODO: is it necessary to check for errors after `Join` too, or
         //       can you be sure that, with the implementation of the system
         //       call handler you made, it will never give an error?; what
