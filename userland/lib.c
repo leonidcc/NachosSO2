@@ -41,6 +41,7 @@ char* concat(char* s1, char* s2) {
     for (;i < strlen(s1); i++) {
         buffer[i] = s1[i];
     }
+    i++;
     for (;j < strlen(s2); j++,i++) {
         buffer[i] = s2[j];
     }
