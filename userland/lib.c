@@ -34,3 +34,15 @@ void itoa(int n, const char* s)
 
     reverse(buffer, s);
 }
+
+char* concat(char* s1, char* s2) {
+    char buffer[strlen(s1)+strlen(s2)]
+    int i = 0, j = 0;
+    for (;i < strlen(s1); i++) {
+        buffer[i] = s1[i];
+    }
+    for (;j < strlen(s2); j++,i++) {
+        buffer[i] = s2[j];
+    }
+    return buffer;
+}
