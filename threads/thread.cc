@@ -84,8 +84,14 @@ Thread::~Thread()
                                        STACK_SIZE * sizeof *stack);
     }
     #ifdef USER_PROGRAM
+    delete space;
+    
+    
     runningProcesses->Remove(this->Pid);
+    delete files;
+    //delete canal;
     #endif
+    
 }
 
 /// Invoke `(*func)(arg)`, allowing caller and callee to execute

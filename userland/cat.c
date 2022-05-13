@@ -17,7 +17,7 @@ int main(int argc, char** argv)
     int i = 0;
     do {
         Read(&buffer[i], 1, o);
-        Write(buffer[i], 1, CONSOLE_OUTPUT);
-    } while (buffer[i++] != EOF && i < MAX_BUFF);
+        Write(&buffer[i], 1, CONSOLE_OUTPUT);
+    } while (buffer[i++] != '\0' && i < MAX_BUFF);
     Close(o);
 }
