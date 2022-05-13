@@ -97,12 +97,8 @@ PrepareArguments(char *line, char **argv, unsigned argvSize)
     return 1;
 }
 
-int
-CheckBackground(char *s)
-{
-    int n = strlen(s);
-    return s[n-1] == '&';
-}
+
+
 
 int
 main(void)
@@ -115,7 +111,7 @@ main(void)
     for (;;) {
         WritePrompt(OUTPUT);
         const unsigned lineSize = ReadLine(line, MAX_LINE_SIZE, INPUT);
-        const int background = CheckBackground(line);
+        
         if (lineSize == 0) {
             continue;
         }
@@ -127,15 +123,29 @@ main(void)
 
         // Comment and uncomment according to whether command line arguments
         // are given in the system call or not.
-        const SpaceId newProc = Exec(line);
+        if(line[0] == '&') { //Execute in the background
+            const SpaceId newProc = Exec(&line[1], argv, 0);
+
+            if(newProc < 0) {
+                WriteError("error forking child", OUTPUT);
+                continue; 
+            } 
+        } else { //Execute with join
+             const SpaceId newProc = Exec(line, argv, 1);
+
+            if(newProc < 0) {
+                WriteError("error forking child", OUTPUT);
+                continue; 
+            } else {
+                Join(newProc);
+            }
+        }
         //const SpaceId newProc = Exec(line, argv);
 
         // TODO: check for errors when calling `Exec`; this depends on how
         //       errors are reported.
 
-        if (!background) {
-            Join(newProc);
-        }
+       
         // TODO: is it necessary to check for errors after `Join` too, or
         //       can you be sure that, with the implementation of the system
         //       call handler you made, it will never give an error?; what
