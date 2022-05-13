@@ -101,7 +101,10 @@ AddressSpace::AddressSpace(OpenFile *executable_file)
 /// Nothing for now!
 AddressSpace::~AddressSpace()
 {
-    delete [] pageTable;
+    for (unsigned i = 0; i < numPages; i++) {
+    pagesInUse->Clear(pageTable[i].physicalPage);
+  }
+  delete [] pageTable;
 }
 
 /// Set the initial values for the user-level register set.
