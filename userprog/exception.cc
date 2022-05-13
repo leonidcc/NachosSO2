@@ -69,36 +69,36 @@ static void
 StartProcess(void * voidargv)
 {
 
-    char** argv = (char**)voidargv;
+    // char** argv = (char**)voidargv;
 
     currentThread->space->InitRegisters();  // Set the initial register values.
 
     currentThread->space->RestoreState();   // Load page table register.
-
-    unsigned argc = 0;
-
-    if(argv != nullptr) {
-        argc = WriteArgs(argv); //libera la memoria de argv
-        DEBUG('e', "argv is not null and argc is: %d \n", argc);
-
-        if(argc) {
-            //Load a1 register (5)
-            int argvaddr = machine->ReadRegister(STACK_REG);
-            //Lo ultimo que hace WriteArgs es dejar el sp dentro de STACK_REG
-            //luego de haber cargado todos los argumentos.
-            machine->WriteRegister(STACK_REG, argvaddr - 24); //convencion de MIPS, restandole 24 seteo el stack pointer 24 bytes más abajo.
-
-            DEBUG('e', "argvaddr is: %d\n", argvaddr);
-            machine->WriteRegister(5, argvaddr);
-        }
-    } else {
-        DEBUG('e', "argvaddr is null!: %p\n", argv);
-    }
-
-    machine->WriteRegister(4, argc);
-
     machine->Run();  // Jump to the user progam.
-    ASSERT(false);   // `machine->Run` never returns; the address space
+
+    // unsigned argc = 0;
+    //
+    // if(argv != nullptr) {
+    //     argc = WriteArgs(argv); //libera la memoria de argv
+    //     DEBUG('e', "argv is not null and argc is: %d \n", argc);
+    //
+    //     if(argc) {
+    //         //Load a1 register (5)
+    //         int argvaddr = machine->ReadRegister(STACK_REG);
+    //         //Lo ultimo que hace WriteArgs es dejar el sp dentro de STACK_REG
+    //         //luego de haber cargado todos los argumentos.
+    //         machine->WriteRegister(STACK_REG, argvaddr - 24); //convencion de MIPS, restandole 24 seteo el stack pointer 24 bytes más abajo.
+    //
+    //         DEBUG('e', "argvaddr is: %d\n", argvaddr);
+    //         machine->WriteRegister(5, argvaddr);
+    //     }
+    // } else {
+    //     DEBUG('e', "argvaddr is null!: %p\n", argv);
+    // }
+    //
+    // machine->WriteRegister(4, argc);
+    //
+    // ASSERT(false);   // `machine->Run` never returns; the address space
                     // exits by doing the system call `Exit`.
 }
 /// Handle a system call exception.
@@ -266,7 +266,7 @@ SyscallHandler(ExceptionType _et)
                     }
                     buffer[counter] = c;
                 }
-                buffer[counter] = '\0';
+                buffer[counter] = '\n';
                 WriteStringToUser(buffer, usrStringAddr);
                 machine->WriteRegister(2, counter);
                 break;
@@ -361,6 +361,12 @@ SyscallHandler(ExceptionType _et)
         case SC_JOIN: {
             SpaceId spaceId = machine->ReadRegister(4);
 
+            if(spaceId < 0){
+                DEBUG('e',"Error en Join: id del proceso inexistente");
+                machine->WriteRegister(2, -1);
+                break;
+            }
+
             if(!runningProcesses->HasKey(spaceId)){
                 DEBUG('e',"Error en Join: id del proceso inexistente");
                 machine->WriteRegister(2, -1);
@@ -375,9 +381,9 @@ SyscallHandler(ExceptionType _et)
         }
 
         case SC_EXEC: {
+
             int nameAddr = machine->ReadRegister(4);
             int argvAddr = machine->ReadRegister(5);
-            bool isJoinable = (bool)machine->ReadRegister(6);
             char **argv = nullptr;
 
             if (nameAddr == 0) {
@@ -387,37 +393,42 @@ SyscallHandler(ExceptionType _et)
             }
 
             char buffer[FILE_NAME_MAX_LEN+1];
-            if(!ReadStringFromUser(nameAddr, buffer, sizeof buffer)) {
+            if(!ReadStringFromUser(nameAddr, buffer, sizeof buffer )) {
                 DEBUG('e', "Read string error\n");
                 machine->WriteRegister(2, -1);
                 break;
             }
 
-            if (argvAddr) {
-                DEBUG('e', "argvAddr distinto de cero, con direccion: %d\n", argvAddr);
-                argv = SaveArgs(argvAddr);
-            }
+            // if (argvAddr) {
+            //     DEBUG('e', "argvAddr distinto de cero, con direccion: %d \n", argvAddr);
+            //     argv = SaveArgs(argvAddr);
+            // }
 
             OpenFile *executable = fileSystem->Open(buffer);
 
             if (executable == nullptr) {
                 DEBUG('e', "Unable to open file %s\n", buffer);
+                printf("Che master el programa que intenta ejecutar no existe \n");
                 machine->WriteRegister(2, -1);
                 break;
             }
 
-            Thread *newThread = new Thread(buffer, isJoinable);
+            // creamos el proceso
+            Thread *newThread = new Thread(buffer,  true, currentThread->GetPriority());
 
+            // añadimos el proceso a las tabla de procesos
             SpaceId id = (SpaceId)runningProcesses->Add(newThread);
+            newThread->Pid = id;
 
+            // cargamos el programa a memoria
             AddressSpace *space = new AddressSpace(executable);
-
             newThread->space = space;
+
             delete executable;
 
+            //ejecutamos el proceso
             newThread->Fork(StartProcess, (void *) argv);
             machine->WriteRegister(2, id);
-
             break;
         }
 
