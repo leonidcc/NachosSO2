@@ -10,6 +10,7 @@
 
 
 #include "syscall.h"
+#include "lib.h"
 
 
 int
@@ -17,7 +18,7 @@ main(void)
 {
     Create("test.txt");
     OpenFileId o = Open("test.txt");
-    Write("Hello world\n",12,o);
+    Write("Hello world somos cracks \n",strlen("Hello world somos cracks \n"),o);
     Close(o);
     return 0;
 }

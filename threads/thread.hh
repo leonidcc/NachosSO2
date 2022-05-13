@@ -177,6 +177,7 @@ private:
     int userRegisters[NUM_TOTAL_REGS];
 
 public:
+    int Pid;
 
     // Save user-level register state.
     void SaveUserState();

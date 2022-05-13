@@ -58,6 +58,7 @@ Thread::Thread(const char *threadName, bool state, int pr)
     }
 
 #ifdef USER_PROGRAM
+    Pid = -1;
     files = new Table<OpenFile *>;
     files->Add(nullptr);
     files->Add(nullptr);//to return greater and equal than 2
@@ -82,6 +83,9 @@ Thread::~Thread()
         SystemDep::DeallocBoundedArray((char *) stack,
                                        STACK_SIZE * sizeof *stack);
     }
+    #ifdef USER_PROGRAM
+    runningProcesses->Remove(this->Pid);
+    #endif
 }
 
 /// Invoke `(*func)(arg)`, allowing caller and callee to execute
