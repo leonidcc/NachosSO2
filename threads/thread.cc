@@ -85,13 +85,13 @@ Thread::~Thread()
     }
     #ifdef USER_PROGRAM
     delete space;
-    
-    
+
+
     runningProcesses->Remove(this->Pid);
     delete files;
     //delete canal;
     #endif
-    
+
 }
 
 /// Invoke `(*func)(arg)`, allowing caller and callee to execute
@@ -192,12 +192,13 @@ Thread::Finish()
 
     DEBUG('t', "Finishing thread \"%s\"\n", GetName());
 
-    threadToBeDestroyed = currentThread;
+
 
     if (joinable){
       int finished = 1;
       canal->Send(finished);
     }
+    threadToBeDestroyed = currentThread;
     Sleep();  // Invokes `SWITCH`.
     // Not reached.
 }
