@@ -101,7 +101,7 @@ AddressSpace::AddressSpace(OpenFile *executable_file)
 /// Nothing for now!
 AddressSpace::~AddressSpace()
 {
-    for (unsigned i = 0; i < numPages; i++) {
+  for (unsigned i = 0; i < numPages; i++) {
     pagesInUse->Clear(pageTable[i].physicalPage);
   }
   delete [] pageTable;
@@ -150,6 +150,16 @@ AddressSpace::SaveState()
 void
 AddressSpace::RestoreState()
 {
-    machine->GetMMU()->pageTable     = pageTable;
-    machine->GetMMU()->pageTableSize = numPages;
+    // machine->GetMMU()->pageTable     = pageTable;
+    // machine->GetMMU()->pageTableSize = numPages;
+    // acceder a la tlb y completar con invalid
+    for (int i = 0; i < TLB_SIZE; i++) {
+          // dfsdfsdf
+    }
+}
+
+TranslationEntry *
+AddressSpace::GetPageTable()
+{
+    return pageTable;
 }

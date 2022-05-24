@@ -46,6 +46,7 @@ public:
 
     void SaveState();
     void RestoreState();
+    TranslationEntry *GetPageTable();
 
 private:
 

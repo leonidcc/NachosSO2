@@ -30,7 +30,7 @@
 
 #include "mmu.hh"
 #include "endianness.hh"
-
+#include "statistics.hh"
 #include <stdio.h>
 
 
@@ -174,6 +174,8 @@ MMU::RetrievePageEntry(unsigned vpn, TranslationEntry **entry) const
 {
     ASSERT(entry != nullptr);
 
+    stats->accessTable++;
+
     if (tlb == nullptr) {
         // Use a page table; `vpn` is an index in the table.
 
@@ -200,6 +202,7 @@ MMU::RetrievePageEntry(unsigned vpn, TranslationEntry **entry) const
             TranslationEntry *e = &tlb[i];
             if (e->valid && e->virtualPage == vpn) {
                 *entry = e;  // FOUND!
+                stats->hits++; // NO SUMAR SI LO ARREGLO
                 return NO_EXCEPTION;
             }
         }

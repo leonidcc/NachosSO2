@@ -53,6 +53,11 @@ public:
     /// Number of packets received over the network.
     unsigned long numPacketsRecvd;
 
+#ifdef USE_TLB
+    unsigned long accessTable = 0;
+    unsigned long hits = 0;
+#endif
+
 #ifdef DFS_TICKS_FIX
     /// Number of times the tick count gets reset.
     unsigned long tickResets;

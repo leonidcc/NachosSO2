@@ -95,6 +95,9 @@ Scheduler::Run(Thread *nextThread)
         currentThread->space->SaveState();
     }
 #endif
+#ifdef USE_TLB
+    
+#endif
 
     oldThread->CheckOverflow();  // Check if the old thread had an undetected
                                  // stack overflow.

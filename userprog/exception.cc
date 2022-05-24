@@ -30,6 +30,7 @@
 #include "filesys/open_file.hh"
 #include "threads/system.hh"
 #include "exception.hh"
+int ind_circular = 0;
 
 static void
 IncrementPC()
@@ -62,6 +63,27 @@ DefaultHandler(ExceptionType et)
     ASSERT(false);
 }
 
+static void
+PageFaultHandler(ExceptionType et)
+{
+    DEBUG('a', "PageFault");
+    int badaddr = machine->ReadRegister(BAD_VADDR_REG);
+    int vpn = badaddr/PAGE_SIZE;
+    TranslationEntry fallo = currentThread->space->GetPageTable()[vpn];
+    machine->GetMMU()->tlb[ind_circular] = fallo;
+    ind_circular++;
+    if (ind_circular == TLB_SIZE) {
+        ind_circular = 0;
+    }
+}
+
+static void
+ReadOnlyHandler(ExceptionType et)
+{
+    DEBUG('a', "ReadOnly");
+
+}
+
 /// Runs an user program.
 /// Opens the exec, loads it into the memory, and jumps into it.
 
@@ -73,30 +95,30 @@ StartProcess(void * voidargv)
 
     currentThread->space->InitRegisters();  // Set the initial register values.
 
-    
+
     currentThread->space->RestoreState();   // Load page table register.
-    
+
 
      unsigned argc = 0;
-    
+
      if(argv != nullptr) {
          argc = WriteArgs(argv);// libera la memoria de argv
          DEBUG('e', "argv is not null and argc is: %d \n", argc);
-    
+
          if(argc) {
              //Load a1 register (5)
              int argvaddr = machine->ReadRegister(STACK_REG);
              //Lo ultimo que hace WriteArgs es dejar el sp dentro de STACK_REG
              //luego de haber cargado todos los argumentos.
              machine->WriteRegister(STACK_REG, argvaddr - 24);// convencion de MIPS, restandole 24 seteo el stack pointer 24 bytes más abajo.
-    
+
              DEBUG('e', "argvaddr is: %d\n", argvaddr);
              machine->WriteRegister(5, argvaddr);
          }
      } else {
          DEBUG('e', "argvaddr is null!: %p\n", argv);
      }
-    
+
      machine->WriteRegister(4, argc);
      machine->Run();  // Jump to the user progam
      ASSERT(false); //   `machine->Run` never returns; the address space
@@ -449,8 +471,8 @@ SetExceptionHandlers()
 {
     machine->SetHandler(NO_EXCEPTION,            &DefaultHandler);
     machine->SetHandler(SYSCALL_EXCEPTION,       &SyscallHandler);
-    machine->SetHandler(PAGE_FAULT_EXCEPTION,    &DefaultHandler);
-    machine->SetHandler(READ_ONLY_EXCEPTION,     &DefaultHandler);
+    machine->SetHandler(PAGE_FAULT_EXCEPTION,    &PageFaultHandler);
+    machine->SetHandler(READ_ONLY_EXCEPTION,     &ReadOnlyHandler);
     machine->SetHandler(BUS_ERROR_EXCEPTION,     &DefaultHandler);
     machine->SetHandler(ADDRESS_ERROR_EXCEPTION, &DefaultHandler);
     machine->SetHandler(OVERFLOW_EXCEPTION,      &DefaultHandler);
