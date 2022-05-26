@@ -6,7 +6,7 @@
 #include "transfer.hh"
 #include "lib/utility.hh"
 #include "threads/system.hh"
-
+#include <stdio.h>
 
 void ReadBufferFromUser(int userAddress, char *outBuffer,
                         unsigned byteCount)
@@ -20,7 +20,7 @@ void ReadBufferFromUser(int userAddress, char *outBuffer,
     do {
         int temp;
         count++;
-        ASSERT(machine->ReadMem(userAddress++, 1, &temp));
+        while (machine->ReadMem(userAddress++, 1, &temp) != NO_EXCEPTION);
         *outBuffer = (unsigned char) temp;
         outBuffer++;
     } while (count < byteCount);
@@ -34,12 +34,12 @@ bool ReadStringFromUser(int userAddress, char *outString,
     ASSERT(userAddress != 0);
     ASSERT(outString != nullptr);
     ASSERT(maxByteCount != 0);
-
+    int i = 0;
     unsigned count = 0;
     do {
         int temp;
         count++;
-        ASSERT(machine->ReadMem(userAddress++, 1, &temp));
+        while (machine->ReadMem(userAddress++, 1, &temp) != NO_EXCEPTION);
         *outString = (unsigned char) temp;
     } while (*outString++ != '\0' && count < maxByteCount);
 
