@@ -153,8 +153,8 @@ AddressSpace::RestoreState()
     // machine->GetMMU()->pageTable     = pageTable;
     // machine->GetMMU()->pageTableSize = numPages;
     // acceder a la tlb y completar con invalid
-    for (int i = 0; i < TLB_SIZE; i++) {
-          // dfsdfsdf
+    for (unsigned i = 0; i < TLB_SIZE; i++) {
+        machine->GetMMU()->tlb[i].valid = false;
     }
 }
 
