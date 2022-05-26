@@ -75,13 +75,13 @@ PageFaultHandler(ExceptionType et)
     if (ind_circular == TLB_SIZE) {
         ind_circular = 0;
     }
+    stats->hits-=1;
 }
 
 static void
 ReadOnlyHandler(ExceptionType et)
 {
     DEBUG('a', "ReadOnly");
-
 }
 
 /// Runs an user program.
