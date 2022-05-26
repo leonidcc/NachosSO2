@@ -31,6 +31,7 @@
 #include "mmu.hh"
 #include "endianness.hh"
 #include "statistics.hh"
+#include "system.hh"
 #include <stdio.h>
 
 
@@ -196,13 +197,12 @@ MMU::RetrievePageEntry(unsigned vpn, TranslationEntry **entry) const
 
     } else {
         // Use the TLB.
-
         unsigned i;
         for (i = 0; i < TLB_SIZE; i++) {
             TranslationEntry *e = &tlb[i];
             if (e->valid && e->virtualPage == vpn) {
                 *entry = e;  // FOUND!
-                stats->hits++; // NO SUMAR SI LO ARREGLO
+                stats->hits++;
                 return NO_EXCEPTION;
             }
         }
