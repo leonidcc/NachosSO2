@@ -7,11 +7,11 @@
 #include "lib/utility.hh"
 #include "threads/system.hh"
 #include <stdio.h>
+#define MAX_IT 5
 
 void ReadBufferFromUser(int userAddress, char *outBuffer,
                         unsigned byteCount)
 {
-    // TODO: implement.
     ASSERT(userAddress != 0);
     ASSERT(outBuffer != nullptr);
     ASSERT(byteCount != 0);
@@ -20,7 +20,15 @@ void ReadBufferFromUser(int userAddress, char *outBuffer,
     do {
         int temp;
         count++;
-        while (machine->ReadMem(userAddress++, 1, &temp) != NO_EXCEPTION);
+        bool bandera = false;
+        for (int i = 0; i < MAX_IT; i++) {
+            if (machine->ReadMem(userAddress, 1, &temp)) {
+                userAddress++;
+                bandera = true;
+                break;
+            }
+        }
+        ASSERT(bandera);
         *outBuffer = (unsigned char) temp;
         outBuffer++;
     } while (count < byteCount);
@@ -34,12 +42,19 @@ bool ReadStringFromUser(int userAddress, char *outString,
     ASSERT(userAddress != 0);
     ASSERT(outString != nullptr);
     ASSERT(maxByteCount != 0);
-    int i = 0;
     unsigned count = 0;
     do {
         int temp;
         count++;
-        while (machine->ReadMem(userAddress++, 1, &temp) != NO_EXCEPTION);
+        bool bandera = false;
+        for (int i = 0; i < MAX_IT; i++) {
+            if (machine->ReadMem(userAddress, 1, &temp)) {
+                userAddress++;
+                bandera = true;
+                break;
+            }
+        }
+        ASSERT(bandera);
         *outString = (unsigned char) temp;
     } while (*outString++ != '\0' && count < maxByteCount);
 
@@ -47,29 +62,42 @@ bool ReadStringFromUser(int userAddress, char *outString,
 }
 
 void WriteBufferToUser(const char *buffer, int userAddress, unsigned byteCount){
-    // TODO: implement.
     ASSERT(buffer != nullptr);
     ASSERT(userAddress != 0);
     ASSERT(byteCount != 0);
 
     unsigned count = 0;
-    while( count < byteCount) {
-      ASSERT(machine->WriteMem(userAddress, 1, *buffer));
-      userAddress++;
-      count++;
-      buffer++;
+    while (count < byteCount) {
+        bool bandera = false;
+        for (int i = 0; i < MAX_IT; i++ ) {
+            if (machine->WriteMem(userAddress, 1, *buffer)) {
+                userAddress++;
+                bandera = true;
+                break;
+            }
+        }
+        ASSERT(bandera);
+        buffer++;
+        count++;
     }
 }
 
 void WriteStringToUser(const char *string, int userAddress){
-    // TODO: implement.
     ASSERT(string != nullptr);
     ASSERT(userAddress != 0);
 
     while (*string != '\0') {
-        ASSERT(machine->WriteMem(userAddress, 1,*string));
+        bool bandera = false;
+        for (int i = 0; i < MAX_IT; i++ ) {
+            if (machine->WriteMem(userAddress, 1, *string)) {
+                userAddress++;
+                bandera = true;
+                break;
+            }
+        }
+        ASSERT(bandera);
         userAddress++;
         string++;
     }
-    ASSERT(machine->WriteMem(userAddress, 1, '\0'));
+    // ASSERT(machine->WriteMem(userAddress, 1, '\0'));
 }
