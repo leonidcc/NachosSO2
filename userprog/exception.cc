@@ -63,27 +63,6 @@ DefaultHandler(ExceptionType et)
     ASSERT(false);
 }
 
-static void
-PageFaultHandler(ExceptionType et)
-{
-    DEBUG('a', "PageFault");
-    int badaddr = machine->ReadRegister(BAD_VADDR_REG);
-    int vpn = badaddr/PAGE_SIZE;
-    TranslationEntry fallo = currentThread->space->GetPageTable()[vpn];
-    machine->GetMMU()->tlb[ind_circular] = fallo;
-    ind_circular++;
-    if (ind_circular == TLB_SIZE) {
-        ind_circular = 0;
-    }
-    stats->hits-=1;
-}
-
-static void
-ReadOnlyHandler(ExceptionType et)
-{
-    DEBUG('a', "ReadOnly");
-}
-
 /// Runs an user program.
 /// Opens the exec, loads it into the memory, and jumps into it.
 
@@ -463,6 +442,30 @@ SyscallHandler(ExceptionType _et)
     IncrementPC();
 }
 
+static void
+PageFaultHandler(ExceptionType et)
+{
+    DEBUG('a', "PageFault");
+    int badaddr = machine->ReadRegister(BAD_VADDR_REG);
+    int vpn = badaddr/PAGE_SIZE;
+    TranslationEntry fallo = currentThread->space->GetPageTable()[vpn];
+    #ifdef DEMAND_LOADING
+    if (fallo.physicalPage == -1) {
+        currentThread->space->LoadPage(vpn);
+    }
+    #endif
+    machine->GetMMU()->tlb[ind_circular % TLB_SIZE] = fallo;
+    ind_circular++;
+    stats->hits-=1;
+}
+
+static void
+ReadOnlyHandler(ExceptionType et)
+{
+    DEBUG('e', "Tried to read from a read only page");
+    ASSERT(false); // Esto mata al so, esta bien?
+    return;
+}
 
 /// By default, only system calls have their own handler.  All other
 /// exception types are assigned the default handler.
@@ -471,7 +474,11 @@ SetExceptionHandlers()
 {
     machine->SetHandler(NO_EXCEPTION,            &DefaultHandler);
     machine->SetHandler(SYSCALL_EXCEPTION,       &SyscallHandler);
+    #ifdef USE_TLB
     machine->SetHandler(PAGE_FAULT_EXCEPTION,    &PageFaultHandler);
+    #else
+    machine->SetHandler(PAGE_FAULT_EXCEPTION,    &DefaultHandler);
+    #endif
     machine->SetHandler(READ_ONLY_EXCEPTION,     &ReadOnlyHandler);
     machine->SetHandler(BUS_ERROR_EXCEPTION,     &DefaultHandler);
     machine->SetHandler(ADDRESS_ERROR_EXCEPTION, &DefaultHandler);
