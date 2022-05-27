@@ -16,6 +16,7 @@
 
 #include "filesys/file_system.hh"
 #include "machine/translation_entry.hh"
+#include "executable.hh"
 
 
 const unsigned USER_STACK_SIZE = 1024;  ///< Increase this as necessary!
@@ -55,6 +56,8 @@ private:
 
     /// Number of pages in the virtual address space.
     unsigned numPages;
+
+    Executable *exe;
 
 };
 
