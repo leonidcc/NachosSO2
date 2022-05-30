@@ -59,6 +59,7 @@ private:
 
     Executable *exe;
 
+    unsigned int size;
 };
 
 

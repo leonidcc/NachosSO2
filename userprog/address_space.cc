@@ -25,7 +25,7 @@ AddressSpace::AddressSpace(OpenFile *executable_file)
 
     // How big is address space?
 
-    unsigned size = exe->GetSize() + USER_STACK_SIZE;
+    size = exe->GetSize() + USER_STACK_SIZE;
       // We need to increase the size to leave room for the stack.
     numPages = DivRoundUp(size, PAGE_SIZE);
     size = numPages * PAGE_SIZE;
@@ -170,6 +170,7 @@ void AddressSpace::LoadPage(int vpn)
 
   memset(&mainMemory[pageTable[vpn].physicalPage * PAGE_SIZE], 0, PAGE_SIZE); //Solo cuando es la pila
   unsigned int vaddrinit = vpn * PAGE_SIZE;
+  
   if (vaddrinit <= size - USER_STACK_SIZE) { // size es getSize + USER_STACK_SIZE
     uint32_t dataSizeI = exe->GetInitDataSize();
     uint32_t dataSizeU = exe->GetUninitDataSize();
@@ -184,20 +185,15 @@ void AddressSpace::LoadPage(int vpn)
         unsigned leerdata = PAGE_SIZE - leercode;
         exe->ReadCodeBlock(&mainMemory[pageTable[vpn].physicalPage * PAGE_SIZE], leercode, vaddrinit);
         exe->ReadDataBlock(&mainMemory[pageTable[vpn].physicalPage * PAGE_SIZE] + leercode, leerdata, 0);
-      }
-      else { // Esta todo en Code 
+      } else { // Esta todo en Code 
         exe->ReadCodeBlock(&mainMemory[pageTable[vpn].physicalPage * PAGE_SIZE], PAGE_SIZE, vaddrinit);
       }
     }
-    else if (vaddrinit < dataAddr + dataSizeI && vaddrinit >= dataAddr && dataSizeI + dataSizeU > 0) // Estamos en data Init
-    {
-      if (vaddrinit + PAGE_SIZE >= dataAddr + dataSizeI)
-      { // Arranca en init, termina afuera
+    else if (vaddrinit < dataAddr + dataSizeI && vaddrinit >= dataAddr && dataSizeI + dataSizeU > 0) { // Estamos en data Init
+      if (vaddrinit + PAGE_SIZE >= dataAddr + dataSizeI) { // Arranca en init, termina afuera
         unsigned leerInit = dataAddr + dataSizeI - vaddrinit;
         exe->ReadDataBlock(&mainMemory[pageTable[vpn].physicalPage * PAGE_SIZE], leerInit, vaddrinit - dataAddr);
-      }
-      else // Esta todo en data Init
-      {
+      } else { // Esta todo en data Init 
         exe->ReadDataBlock(&mainMemory[pageTable[vpn].physicalPage * PAGE_SIZE], PAGE_SIZE, vaddrinit - dataAddr);
       }
     }
