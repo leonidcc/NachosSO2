@@ -37,6 +37,9 @@ userland/generaltest
 userland/echo
 userland/tiny_shell
 userland/touch
+userland/cat
+userland/cp
+userland/rm
 
 bin/coff2flat
 bin/coff2noff
