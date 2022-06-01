@@ -442,10 +442,6 @@ SyscallHandler(ExceptionType _et)
     IncrementPC();
 }
 
-#ifdef PRPOLICY_FIFO
-int indice = 0;
-#endif
-
 static void
 PageFaultHandler(ExceptionType et)
 {
@@ -458,17 +454,6 @@ PageFaultHandler(ExceptionType et)
         currentThread->space->LoadPage(vpn);
     }
     #endif
-    #ifdef PRPOLICY_FIFO
-      // politica fifo
-    machine->GetMMU()->tlb[indice % TLB_SIZE] = fallo;
-    indice++;
-    #else
-    #ifdef PRPOLICY_LRU
-      // politica reloj mejorado
-    #else
-      // politica pick_victim con un indice aleatorio
-    machine->GetMMU()->tlb[PickVictim()] = fallo;
-    #endif
     stats->hits-=1;
 }
 
@@ -478,14 +463,6 @@ ReadOnlyHandler(ExceptionType et)
     DEBUG('e', "Tried to read from a read only page");
     ASSERT(false); // Esto mata al so
     return;
-}
-
-int
-PickVictim()
-{
-    // retorna un numero aleatorio entre 0 y TLB_SIZE-1
-    srand(1);
-    return rand() % TLB_SIZE;
 }
 
 /// By default, only system calls have their own handler.  All other
