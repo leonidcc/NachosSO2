@@ -175,7 +175,9 @@ MMU::RetrievePageEntry(unsigned vpn, TranslationEntry **entry) const
 {
     ASSERT(entry != nullptr);
 
+    #ifdef USE_TLB
     stats->accessTable++;
+    #endif
 
     if (tlb == nullptr) {
         // Use a page table; `vpn` is an index in the table.
@@ -202,7 +204,9 @@ MMU::RetrievePageEntry(unsigned vpn, TranslationEntry **entry) const
             TranslationEntry *e = &tlb[i];
             if (e->valid && e->virtualPage == vpn) {
                 *entry = e;  // FOUND!
+                #ifdef USE_TLB
                 stats->hits++;
+                #endif
                 return NO_EXCEPTION;
             }
         }
