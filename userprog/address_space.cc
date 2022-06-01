@@ -18,6 +18,17 @@
 AddressSpace::AddressSpace(OpenFile *executable_file)
 {
     ASSERT(executable_file != nullptr);
+    #ifdef SWAP
+    char* swapFile = new char[30];
+    sprintf(swapFile, "userprog/swap/SWAP.%d", currentThread->Pid);
+    if (!fileSystem->Create(swapFile, 0))
+        // error
+    
+    swap = fileSystem->Open(swapFile);
+    if (swap == nullptr)
+        // error
+
+    #endif
 
     exe = new Executable(executable_file);
     // esto verifica que no estemos tratando de ejecutar un archivo q no sea de Nachos
@@ -159,9 +170,25 @@ void AddressSpace::RestoreState()
 void AddressSpace::LoadPage(int vpn)
 {
   char *mainMemory = machine->GetMMU()->mainMemory;
+  #ifndef SWAP
   int phy = pagesInUse->Find();
   if (phy == -1)
     ASSERT(false);
+  #else
+  int phy = pagesInUse->Find(vpn, currentThread->Pid);
+  if (phy == -1) {
+    phy = PickVictim();
+    int *toKill = pagesInUse->GetOwner(phy);
+    int killPid = toKill[0];
+    int killVpn = toKill[1];
+    if (killPid == -1 && killVpn == -1) {
+      // hacer algo
+    } else {
+      runningThreads->Get(killPid)->space->WriteToSwap(killVpn, phy);
+      pagesInUse->Mark(phy, vpn, currentThread->Pid);
+    }
+  }
+  #endif
   pageTable[vpn].physicalPage = phy;
   pageTable[vpn].valid = true;
   pageTable[vpn].use = false;
@@ -205,4 +232,28 @@ TranslationEntry *
 AddressSpace::GetPageTable()
 {
     return pageTable;
+}
+
+#ifdef PRPOLICY_FIFO || PRPOLICY_LRU
+int nextVictim = 0;
+#endif
+
+int
+PickVictim()
+{
+    #ifdef PRPOLICY_FIFO
+        // politica fifo
+        int i = nextVictim;
+        nextVictim++ % NUM_PHYS_PAGES;
+        return i;
+    #endif
+    #ifdef PRPOLICY_LRU
+       // politica reloj mejorado
+    #endif
+    #ifdef PRPOLICY_RANDOM
+        // politica aleatoria
+        srand(1);
+        return rand() % NUM_PHYS_PAGES;
+    #endif
+    return 0;
 }

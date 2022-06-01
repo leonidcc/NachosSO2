@@ -48,7 +48,17 @@ public:
     void SaveState();
     void RestoreState();
     TranslationEntry *GetPageTable();
+    #ifdef DEMAND_LOADING
 
+    // Loads a page to memory
+    void LoadPage(int vpn);
+
+    #ifdef SWAP
+    SwappedList *swapped;
+    OpenFile *swap;
+    void WriteToSwap(unsigned vpn, int phy);
+    #endif
+    #endif
 private:
 
     /// Assume linear page table translation for now!
