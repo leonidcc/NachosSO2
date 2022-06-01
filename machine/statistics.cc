@@ -21,10 +21,17 @@ Statistics::Statistics()
     numDiskReads = numDiskWrites = 0;
     numConsoleCharsRead = numConsoleCharsWritten = 0;
     numPageFaults = numPacketsSent = numPacketsRecvd = 0;
-#ifdef DFS_TICKS_FIX
+    #ifdef DFS_TICKS_FIX
     tickResets = 0;
-#endif
-
+    #endif
+    #ifdef USE_TLB
+    accessTable = 0;
+    hits = 0;
+    #endif
+    #ifdef SWAP
+    toSwap = 0;
+    fromSwap = 0;
+    #endif
 }
 
 /// Print performance metrics, when we have finished everything at system
@@ -32,12 +39,12 @@ Statistics::Statistics()
 void
 Statistics::Print()
 {
-#ifdef DFS_TICKS_FIX
+    #ifdef DFS_TICKS_FIX
     if (tickResets != 0) {
         printf("WARNING: the tick counter was reset %lu times; the following"
                " statistics may be invalid.\n\n", tickResets);
     }
-#endif
+    #endif
     printf("Ticks: total %lu, idle %lu, system %lu, user %lu\n",
            totalTicks, idleTicks, systemTicks, userTicks);
     printf("Disk I/O: reads %lu, writes %lu\n", numDiskReads, numDiskWrites);
@@ -46,7 +53,10 @@ Statistics::Print()
     printf("Paging: faults %lu\n", numPageFaults);
     printf("Network I/O: packets received %lu, sent %lu\n",
            numPacketsRecvd, numPacketsSent);
-#ifdef USE_TLB
+    #ifdef USE_TLB
     printf("Hit Ratio: %lu\n", accessTable == 0 ? 0 : hits/accessTable);
-#endif
+    #endif
+    #ifdef SWAP
+    printf("Pages to SWAP: %lu, Pages from SWAP: %lu\n", toSwap, fromSwap);
+    #endif
 }
