@@ -454,7 +454,9 @@ PageFaultHandler(ExceptionType et)
         currentThread->space->LoadPage(vpn);
     }
     #endif
+    #ifdef USE_TLB
     stats->hits-=1;
+    #endif
 }
 
 static void
