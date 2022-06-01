@@ -56,6 +56,7 @@ public:
     #ifdef SWAP
     SwappedList *swapped;
     OpenFile *swap;
+    char nombreSwap[30];
     void WriteToSwap(unsigned vpn, int phy);
     #endif
     #endif
