@@ -15,6 +15,10 @@
 #include "machine/mmu.hh"
 #endif
 
+#ifdef SWAP
+#include "vmem/coremap.hh"
+#endif
+
 
 #include <stdlib.h>
 #include <string.h>
@@ -46,7 +50,13 @@ SynchDisk *synchDisk;
 
 #ifdef USER_PROGRAM  // Requires either *FILESYS* or *FILESYS_STUB*.
 Machine *machine;  ///< User program memory and registers.
+
+#ifndef SWAP
 Bitmap *pagesInUse;
+#else
+Coremap *pagesInUse;
+#endif
+
 Table<Thread *> *runningProcesses;
 SynchConsole *synchConsole;
 #endif
@@ -241,7 +251,12 @@ Initialize(int argc, char **argv)
 #ifdef USER_PROGRAM
     Debugger *d = debugUserProg ? new Debugger : nullptr;
     machine = new Machine(d);  // This must come first.
+
+    #ifndef SWAP
     pagesInUse = new Bitmap(NUM_PHYS_PAGES);
+    #else
+    pagesInUse = new Coremap(NUM_PHYS_PAGES);
+    #endif
 
     SetExceptionHandlers();
     synchConsole = new SynchConsole();
