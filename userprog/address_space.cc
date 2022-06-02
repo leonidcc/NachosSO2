@@ -121,7 +121,7 @@ AddressSpace::~AddressSpace()
   }
   delete [] pageTable;
   #ifdef SWAP
-  fileSystem->Remove(swap);
+  fileSystem->Remove(nombreSwap);
   delete swap;
   #endif
 }
@@ -199,7 +199,7 @@ void AddressSpace::LoadPage(int vpn)
   if (phy == -1)
     ASSERT(false);
   #else
-  int phy = pagesInUse->Find(vpn, currentThread->pid);
+  int phy = pagesInUse->Find(vpn, currentThread->Pid);
   if (phy == -1)
   {
     phy = PickVictim();
@@ -207,10 +207,11 @@ void AddressSpace::LoadPage(int vpn)
     int killPID = tokill[1];         // PID del Proceso
     int killVPN = tokill[0];         // VPN para de la pagina fisica para el proceso
     if (killPID == -1 && killVPN == -1) {
-      pagesInUse->Mark(phy, vpn, currentThread->pid);
+      pagesInUse->Mark(phy, vpn, currentThread->Pid);
     } else {
-      runningThreads->Get(killPID)->space->WriteToSwap(killVPN, phy);
-      pagesInUse->Mark(phy, vpn, currentThread->pid);
+      //runningThreads->Get(killPID)->space->WriteToSwap(killVPN, phy);
+      runningProcesses->Get(killPID)->space->WriteToSwap(killVPN, phy);
+      pagesInUse->Mark(phy, vpn, currentThread->Pid);
     }
   }
   #endif
@@ -261,7 +262,11 @@ AddressSpace::GetPageTable()
     return pageTable;
 }
 
-#ifdef PRPOLICY_FIFO || PRPOLICY_LRU
+#ifdef PRPOLICY_FIFO
+int nextVictim = 0;
+#endif
+
+#ifdef PRPOLICY_LRU
 int nextVictim = 0;
 #endif
 
@@ -271,7 +276,7 @@ void AddressSpace::WriteToSwap(unsigned vpn, int phy)
   if (currentThread->space == this) {
     TranslationEntry *tlb = machine->GetMMU()->tlb;
     for (unsigned i = 0; i < TLB_SIZE; i++) {
-      if (tlb[i].physicalPage == phy && tlb[i].valid) {
+      if ((int)tlb[i].physicalPage == phy && tlb[i].valid) {
         pageTable[vpn] = tlb[i];
         tlb[i].valid = false;
       }
@@ -308,7 +313,7 @@ PickVictim()
       int *check = pagesInUse->GetOwner(pos % NUM_PHYS_PAGES);
       int checkPID = check[1];
       int checkVPN = check[0];
-      TranslationEntry *entry = &(runningThreads->Get(checkPID)->space->pageTable[checkVPN]);
+      TranslationEntry *entry = &(runningProcesses->Get(checkPID)->space->pageTable[checkVPN]);
       switch (i) {
       case 1:
         if (!entry->use && !entry->dirty) {
@@ -342,7 +347,7 @@ PickVictim()
   return nextVictim;
   #endif
   #ifdef PRPOLICY_RANDOM
-  // politica aleatoria
+  // politica aleatoria, por default
   srand(1);
   return rand() % NUM_PHYS_PAGES;
   #endif

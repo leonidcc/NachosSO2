@@ -16,6 +16,9 @@
 #include "machine/statistics.hh"
 #include "machine/timer.hh"
 #include "lib/bitmap.hh"
+#ifdef SWAP
+#include "vmem/coremap.hh"
+#endif
 
 /// Initialization and cleanup routines.
 
@@ -39,7 +42,11 @@ extern Machine *machine;  // User program memory and registers.
 #include "filesys/synch_console.hh"
 extern SynchConsole *synchConsole;
 extern Table<Thread *> *runningProcesses;
+#ifndef SWAP
 extern Bitmap *pagesInUse;
+#else
+extern Coremap *pagesInUse;
+#endif
 #endif
 
 #ifdef FILESYS_NEEDED  // *FILESYS* or *FILESYS_STUB*.

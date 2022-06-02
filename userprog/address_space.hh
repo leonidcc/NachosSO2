@@ -17,10 +17,13 @@
 #include "filesys/file_system.hh"
 #include "machine/translation_entry.hh"
 #include "executable.hh"
-
+#ifdef SWAP
+#include "vmem/swappedlist.hh"
+#endif
 
 const unsigned USER_STACK_SIZE = 1024;  ///< Increase this as necessary!
 
+int PickVictim();
 
 class AddressSpace {
 public:
