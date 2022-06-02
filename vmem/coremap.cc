@@ -1,13 +1,4 @@
-/// Routines to manage a bitmap -- an array of bits each of which can be
-/// either on or off.  Represented as an array of integers.
-///
-/// Copyright (c) 1992-1993 The Regents of the University of California.
-///               2016-2021 Docentes de la Universidad Nacional de Rosario.
-/// All rights reserved.  See `copyright.h` for copyright notice and
-/// limitation of liability and disclaimer of warranty provisions.
-
 #include "coremap.hh"
-
 #include <stdio.h>
 
 /// Initialize a coremap with `nitems` entries, so that every entry is clear.  It

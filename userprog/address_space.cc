@@ -204,12 +204,12 @@ void AddressSpace::LoadPage(int vpn)
   {
     phy = PickVictim();
     int *tokill = pagesInUse->GetOwner(phy);
-    int killPID = tokill[1];                                         // PID del Proceso
-    int killVPN = tokill[0];                                         // VPN para de la pagina fisica para el proceso
+    int killPID = tokill[1];         // PID del Proceso
+    int killVPN = tokill[0];         // VPN para de la pagina fisica para el proceso
     if (killPID == -1 && killVPN == -1) {
-      // hacer algo
+      pagesInUse->Mark(phy, vpn, currentThread->pid);
     } else {
-      runningThreads->Get(killPID)->space->WriteToSwap(killVPN, phy); 
+      runningThreads->Get(killPID)->space->WriteToSwap(killVPN, phy);
       pagesInUse->Mark(phy, vpn, currentThread->pid);
     }
   }
@@ -268,20 +268,16 @@ int nextVictim = 0;
 #ifdef SWAP
 void AddressSpace::WriteToSwap(unsigned vpn, int phy)
 {
-  if (currentThread->space == this)
-  {
+  if (currentThread->space == this) {
     TranslationEntry *tlb = machine->GetMMU()->tlb;
-    for (unsigned i = 0; i < TLB_SIZE; i++)
-    {
-      if (tlb[i].physicalPage == phy && tlb[i].valid)
-      {
+    for (unsigned i = 0; i < TLB_SIZE; i++) {
+      if (tlb[i].physicalPage == phy && tlb[i].valid) {
         pageTable[vpn] = tlb[i];
         tlb[i].valid = false;
       }
     }
   }
-  if (pageTable[vpn].dirty)
-  {
+  if (pageTable[vpn].dirty) {
     int whereswap = swapped->Find(vpn);
     if (whereswap == -1)
       whereswap = swapped->Add(vpn);
