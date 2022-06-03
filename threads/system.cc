@@ -15,11 +15,6 @@
 #include "machine/mmu.hh"
 #endif
 
-#ifdef SWAP
-#include "vmem/coremap.hh"
-#endif
-
-
 #include <stdlib.h>
 #include <string.h>
 
@@ -54,7 +49,7 @@ Machine *machine;  ///< User program memory and registers.
 #ifndef SWAP
 Bitmap *pagesInUse;
 #else
-Coremap *pagesInUse;
+CoreMapEntry *pagesInUse;
 #endif
 
 Table<Thread *> *runningProcesses;
@@ -255,7 +250,7 @@ Initialize(int argc, char **argv)
     #ifndef SWAP
     pagesInUse = new Bitmap(NUM_PHYS_PAGES);
     #else
-    pagesInUse = new Coremap(NUM_PHYS_PAGES);
+    pagesInUse = new CoreMapEntry[NUM_PHYS_PAGES];
     #endif
 
     SetExceptionHandlers();

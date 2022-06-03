@@ -12,15 +12,15 @@
 
 #ifdef SWAP
 #include <stdlib.h>
-#include "vmem/swappedlist.hh"
 #include <iostream>
+#include <climits>
 #define NUM_ROUNDS 4
 #endif
 
 /// First, set up the translation from program memory to physical memory.
 /// For now, this is really simple (1:1), since we are only uniprogramming,
 /// and we have a single unsegmented page table.
-AddressSpace::AddressSpace(OpenFile *executable_file)
+AddressSpace::AddressSpace(OpenFile *executable_file, SpaceId id)
 {
     ASSERT(executable_file != nullptr);
 
@@ -40,18 +40,21 @@ AddressSpace::AddressSpace(OpenFile *executable_file)
     sprintf(nombreSwap, "userprog/swap/SWAP.%d", currentThread->Pid);
 
     if (!fileSystem->Create(nombreSwap, 0)) {
-      // error
+      DEBUG('e', "Error: Swap file not created.\n");
     }
     swap = fileSystem->Open(nombreSwap);
     if (swap == nullptr) {
-      // error
+      DEBUG('e', "Cannot open swap file!\n");
+      ASSERT(false);
     }
-    swapped = new SwappedList(numPages);
+    addressSpaceId = id;
     #endif
 
     // ASSERT(numPages <= NUM_PHYS_PAGES);
     // ahora nos fijamos paginas libres, puesto algunas pueden estar siendo usadas por otros procesos
+    #ifndef SWAP
     ASSERT(numPages <= pagesInUse->CountClear());
+    #endif
 
     // Check we are not trying to run anything too big -- at least until we
     // have virtual memory.
@@ -115,10 +118,12 @@ AddressSpace::AddressSpace(OpenFile *executable_file)
 ///
 /// Nothing for now!
 AddressSpace::~AddressSpace()
-{
+{ 
+  #ifndef SWAP
   for (unsigned i = 0; i < numPages; i++) {
     pagesInUse->Clear(pageTable[i].physicalPage);
   }
+  #endif
   delete [] pageTable;
   #ifdef SWAP
   fileSystem->Remove(nombreSwap);
@@ -167,8 +172,10 @@ AddressSpace::SaveState()
   {
     if (tlb[i].valid)
     {
-      unsigned vpn = tlb[i].virtualPage;
-      pageTable[vpn] = tlb[i];
+      unsigned physicalPageToSave = machine->GetMMU()->tlb[i].physicalPage;
+      TranslationEntry* entry = &GetPageTable()[pagesInUse[physicalPageToSave].virtualPage];
+      machine->GetMMU()->tlb[i].valid = false;
+      *entry = machine->GetMMU()->tlb[i];
     }
   }
   #endif
@@ -191,68 +198,70 @@ void AddressSpace::RestoreState()
 }
 
 #ifdef DEMAND_LOADING
-void AddressSpace::LoadPage(int vpn)
+void AddressSpace::LoadPage(unsigned vpn, unsigned phy)
 {
+  ASSERT(vpn >= 0);
+  ASSERT(phy != INT_MAX); //i  have a valid frame
+
+  uint32_t codeSize = exe->GetCodeSize();
+  uint32_t initDataSize = exe->GetInitDataSize();
+  uint32_t dataVirtualAddr = exe->GetInitDataAddr();
+
+  DEBUG('e', "Loading page: physicalPage: %d, vpn: %d\n", phy, vpn);
+
+  // Get the physical address to write into
+  uint32_t physicalAddressToWrite = phy * PAGE_SIZE;
+
+  // Clean the memory
   char *mainMemory = machine->GetMMU()->mainMemory;
-  #ifndef SWAP
-  int phy = pagesInUse->Find();
-  if (phy == -1)
-    ASSERT(false);
-  #else
-  int phy = pagesInUse->Find(vpn, currentThread->Pid);
-  if (phy == -1)
-  {
-    phy = PickVictim();
-    int *tokill = pagesInUse->GetOwner(phy);
-    int killPID = tokill[1];         // PID del Proceso
-    int killVPN = tokill[0];         // VPN para de la pagina fisica para el proceso
-    if (killPID == -1 && killVPN == -1) {
-      pagesInUse->Mark(phy, vpn, currentThread->Pid);
-    } else {
-      //runningThreads->Get(killPID)->space->WriteToSwap(killVPN, phy);
-      runningProcesses->Get(killPID)->space->WriteToSwap(killVPN, phy);
-      pagesInUse->Mark(phy, vpn, currentThread->Pid);
+  memset(&mainMemory[physicalAddressToWrite], 0, PAGE_SIZE);
+
+  vpn = vpn / PAGE_SIZE;
+  unsigned vpnAddressToRead = vpn * PAGE_SIZE;
+
+  unsigned readed = 0; // I need to ensure that i have readed PAGE_SIZE bytes
+
+  if(pageTable[vpn].dirty) {
+    DEBUG('e',"Reading from swap at position %d...\n", vpn * PAGE_SIZE);
+    swap->ReadAt(&mainMemory[physicalAddressToWrite], PAGE_SIZE, vpn * PAGE_SIZE);
+  } else { //read from the exe file
+    if (codeSize > 0 && vpnAddressToRead < codeSize) {
+      uint32_t toRead = codeSize - vpnAddressToRead < PAGE_SIZE ? codeSize - vpnAddressToRead : PAGE_SIZE;
+
+      exe->ReadCodeBlock(&mainMemory[physicalAddressToWrite], PAGE_SIZE, vpnAddressToRead);
+      readed += toRead; //to check if there is some data left to read
+    }
+
+    if (initDataSize > 0 && vpnAddressToRead + readed < dataVirtualAddr + initDataSize &&
+      readed != PAGE_SIZE) {
+      uint32_t toRead = (dataVirtualAddr + initDataSize) - (vpnAddressToRead + readed) < (PAGE_SIZE - readed) ?
+                              (dataVirtualAddr + initDataSize) - (vpnAddressToRead + readed) : PAGE_SIZE - readed;
+      readed ? //if read any bytes in the code section and i have not completed the PAGE_SIZE
+          exe->ReadDataBlock(&mainMemory[physicalAddressToWrite + readed], toRead,  0) :
+          exe->ReadDataBlock(&mainMemory[physicalAddressToWrite], toRead, vpnAddressToRead - codeSize);
+      readed += toRead;
     }
   }
-  #endif
 
-  pageTable[vpn].physicalPage = phy;
-  pageTable[vpn].valid = true;
-  unsigned int vaddrinit = vpn * PAGE_SIZE;
+  if(vpnAddressToRead > codeSize + initDataSize) { // We are reading from the stack
+    readed = PAGE_SIZE; // memset already done previously
+  };
 
   #ifdef SWAP
-  int whereswap = swapped->Find(vpn);
-  if (whereswap == -1) {
-  #endif
-    uint32_t dataSize = exe->GetInitDataSize();
-    uint32_t dataAddr = exe->GetInitDataAddr();
-    uint32_t codeSize = exe->GetCodeSize();
-    uint32_t codeAddr = exe->GetCodeAddr();
 
-    unsigned int codeCopy = 0;
-    if (codeSize > 0 && codeSize + codeAddr > vaddrinit) { // leer algo en Code
-      codeCopy = codeSize - vaddrinit;
-      codeCopy = codeCopy > PAGE_SIZE ? PAGE_SIZE : codeCopy; // Chequeo que no se pase de una página
-      exe->ReadCodeBlock(&mainMemory[phy * PAGE_SIZE], codeCopy, vaddrinit - codeAddr);
-    }
-    unsigned int dataCopy = 0;
-    if (codeCopy < PAGE_SIZE && dataSize > 0 && vaddrinit < dataAddr + dataSize) { // leer data inicializada
-      int offset = codeCopy > 0 ? 0 : vaddrinit - dataAddr;
-      dataCopy = PAGE_SIZE - codeCopy;
-      dataCopy = dataCopy + vaddrinit + codeCopy > dataSize + dataAddr ? dataSize + dataAddr - (vaddrinit + codeCopy) : dataCopy; // Si lo que hay que leer se pasa de data inicializada, achico la lectura
-      exe->ReadDataBlock(&mainMemory[phy * PAGE_SIZE + codeCopy], dataCopy, offset);
-    }
-    unsigned int copied = codeCopy + dataCopy;
-    if (copied < PAGE_SIZE) { // Pongo en 0 la memoria para data no inicializada o STACK
-      memset(&mainMemory[phy * PAGE_SIZE + copied], 0, PAGE_SIZE - copied);
-    }
-#ifdef SWAP
-  }
-  else {
-    swap->ReadAt(&mainMemory[phy * PAGE_SIZE], PAGE_SIZE, whereswap * PAGE_SIZE);
-    stats->fromSwap++;
+  CoreMapEntry* chosenCoreMapEntry = &pagesInUse[phy];
+  chosenCoreMapEntry->spaceId = addressSpaceId;
+  chosenCoreMapEntry->virtualPage = vpn;
+
+  DEBUG('e',"Marking physical page %u, with virtualPage %u from process %d in the coremap\n", phy, vpn, addressSpaceId);
+
+  DEBUG('e',"State of the coremap: \n");
+  for(unsigned i = 0; i < NUM_PHYS_PAGES; i++){
+    DEBUG('e',"Physical page: %u, spaceId: %d, virtualPage of the mentioned process: %u \n", i, pagesInUse[i].spaceId, pagesInUse[i].virtualPage);
   }
 #endif
+  DEBUG('e', "finished loading page! :) \n");
+  return;
 }
 #endif
 
@@ -271,28 +280,35 @@ int nextVictim = 0;
 #endif
 
 #ifdef SWAP
-void AddressSpace::WriteToSwap(unsigned vpn, int phy)
-{
-  if (currentThread->space == this) {
-    TranslationEntry *tlb = machine->GetMMU()->tlb;
-    for (unsigned i = 0; i < TLB_SIZE; i++) {
-      if ((int)tlb[i].physicalPage == phy && tlb[i].valid) {
-        pageTable[vpn] = tlb[i];
-        tlb[i].valid = false;
+unsigned
+AddressSpace::EvacuatePage() {
+    //search for a victim
+    unsigned victim = PickVictim();
+    SpaceId victimSpace = pagesInUse[victim].spaceId;
+
+  if(runningProcesses->HasKey(victimSpace)) { // the victim process is alive
+      TranslationEntry* entry = &runningProcesses->Get(victimSpace)->space->GetPageTable()[pagesInUse[victim].virtualPage];
+
+    for(unsigned i = 0; i < TLB_SIZE; ++i) { // save the bits if the page is in the TLB
+      if(machine->GetMMU()->tlb[i].physicalPage == victim && machine->GetMMU()->tlb[i].valid) {
+        machine->GetMMU()->tlb[i].valid = false;
+        *entry = machine->GetMMU()->tlb[i];
       }
     }
-  }
-  if (pageTable[vpn].dirty) {
-    int whereswap = swapped->Find(vpn);
-    if (whereswap == -1)
-      whereswap = swapped->Add(vpn);
 
-    char *mainMemory = machine->GetMMU()->mainMemory;
-    swap->WriteAt(&mainMemory[pageTable[vpn].physicalPage * PAGE_SIZE], PAGE_SIZE, whereswap * PAGE_SIZE);
-    pageTable[vpn].dirty = false;
-    stats->toSwap++;
+    //if dirty, we put the midified virtualPage into the N block of the swap file
+    DEBUG('e', "In evacuate page, the entry is: \n dirty: %d\n valid: %d\n", entry->dirty, entry->valid);
+    if(entry->dirty) {
+      char *mainMemory = machine->GetMMU()->mainMemory;
+      unsigned physicalAddressToWrite = victim * PAGE_SIZE;
+      DEBUG('e',"Writing into swap...\n");
+      runningProcesses->Get(pagesInUse[victim].spaceId)->space->swap->WriteAt(&mainMemory[physicalAddressToWrite], PAGE_SIZE, pagesInUse[victim].virtualPage * PAGE_SIZE);   //save the evacuated information in the N file block
+    }
+
+      entry->physicalPage = INT_MAX; // mark the entry out of the memory for the pageTable
+      entry->valid = false; // mark the entry out of the memory for the machine
   }
-  pageTable[vpn].valid = false;
+  return victim;
 }
 #endif
 
@@ -300,55 +316,31 @@ int
 PickVictim()
 {
   #ifdef PRPOLICY_FIFO
+  
   // politica fifo
   int i = nextVictim;
   nextVictim++ % NUM_PHYS_PAGES;
   return i;
   #endif
   #ifdef PRPOLICY_LRU
-  // politica reloj mejorada
-  currentThread->space->SaveState();
-  for (int i = 1; i < NUM_ROUNDS+1; i++) {
-    for (unsigned pos = nextVictim; pos < nextVictim + NUM_PHYS_PAGES; pos++) {
-      int *check = pagesInUse->GetOwner(pos % NUM_PHYS_PAGES);
-      int checkPID = check[1];
-      int checkVPN = check[0];
-      TranslationEntry *entry = &(runningProcesses->Get(checkPID)->space->pageTable[checkVPN]);
-      switch (i) {
-      case 1:
-        if (!entry->use && !entry->dirty) {
-          nextVictim = (pos + 1) % NUM_PHYS_PAGES;
-          return pos % NUM_PHYS_PAGES;
-        }
-        break;
-      case 2:
-        if (!entry->use && entry->dirty) {
-          nextVictim = (pos + 1) % NUM_PHYS_PAGES;
-          return pos % NUM_PHYS_PAGES;
-        }
-        else {entry->use = false;}
-        break;
-      case 3:
-        if (!entry->use && !entry->dirty) {
-          nextVictim = (pos + 1) % NUM_PHYS_PAGES;
-          return pos % NUM_PHYS_PAGES;
-        }
-        break;
-      case 4:
-        if (!entry->use && entry->dirty) {
-          nextVictim = (pos + 1) % NUM_PHYS_PAGES;
-          return pos % NUM_PHYS_PAGES;
-        }
-        break;
-      }
-    }
+  int victim;
+  if(references_done == UINT_MAX) {
+    references_done = 0;
+    for(unsigned i = 0; i < NUM_PHYS_PAGES; i++)
+      pagesInUse[i].last_use_counter = 0;
   }
-  nextVictim = (nextVictim + 1) % NUM_PHYS_PAGES;
-  return nextVictim;
+
+  unsigned min = UINT_MAX;
+  for(unsigned i = 0; i < NUM_PHYS_PAGES; i++) {
+      if(pagesInUse[i].last_use_counter < min) {
+          min = pagesInUse[i].last_use_counter;
+          victim = i;
+      }
+  }
+  return victim;
   #endif
   #ifdef PRPOLICY_RANDOM
   // politica aleatoria, por default
-  srand(1);
   return rand() % NUM_PHYS_PAGES;
   #endif
   return 0;

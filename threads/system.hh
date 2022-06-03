@@ -17,7 +17,7 @@
 #include "machine/timer.hh"
 #include "lib/bitmap.hh"
 #ifdef SWAP
-#include "vmem/coremap.hh"
+#include "userprog/syscall.h"
 #endif
 
 /// Initialization and cleanup routines.
@@ -28,6 +28,16 @@ extern void Initialize(int argc, char **argv);
 // Cleanup, called when Nachos is done.
 extern void Cleanup();
 
+#ifdef SWAP
+typedef struct {
+    SpaceId spaceId;
+    unsigned virtualPage;
+#ifdef PRPOLICY_LRU
+    unsigned last_use_counter;  // this will represent the last recently use page.
+                                // to search for the victim we will search directly for the minimun value of the array
+#endif
+} CoreMapEntry;
+#endif
 
 extern Thread *currentThread;        ///< The thread holding the CPU.
 extern Thread *threadToBeDestroyed;  ///< The thread that just finished.
@@ -45,7 +55,7 @@ extern Table<Thread *> *runningProcesses;
 #ifndef SWAP
 extern Bitmap *pagesInUse;
 #else
-extern Coremap *pagesInUse;
+extern CoreMapEntry *pagesInUse;
 #endif
 #endif
 

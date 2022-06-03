@@ -424,7 +424,7 @@ SyscallHandler(ExceptionType _et)
             newThread->Pid = id;
 
             // cargamos el programa a memoria
-            AddressSpace *space = new AddressSpace(executable);
+            AddressSpace *space = new AddressSpace(executable, id);
             newThread->space = space;
 
             delete executable;
@@ -451,7 +451,7 @@ PageFaultHandler(ExceptionType et)
     TranslationEntry fallo = currentThread->space->GetPageTable()[vpn];
     #ifdef DEMAND_LOADING
     if (fallo.physicalPage == -1) {
-        currentThread->space->LoadPage(vpn);
+        currentThread->space->LoadPage(vpn, fallo.physicalPage);
     }
     #endif
     #ifdef USE_TLB

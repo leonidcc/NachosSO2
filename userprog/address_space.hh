@@ -17,9 +17,7 @@
 #include "filesys/file_system.hh"
 #include "machine/translation_entry.hh"
 #include "executable.hh"
-#ifdef SWAP
-#include "vmem/swappedlist.hh"
-#endif
+#include "userprog/syscall.h"
 
 const unsigned USER_STACK_SIZE = 1024;  ///< Increase this as necessary!
 
@@ -38,7 +36,7 @@ public:
     /// Parameters:
     /// * `executable_file` is the open file that corresponds to the
     ///   program; it contains the object code to load into memory.
-    AddressSpace(OpenFile *executable_file);
+    AddressSpace(OpenFile *executable_file, SpaceId id);
 
     /// De-allocate an address space.
     ~AddressSpace();
@@ -54,13 +52,13 @@ public:
     #ifdef DEMAND_LOADING
 
     // Loads a page to memory
-    void LoadPage(int vpn);
+    void LoadPage(unsigned, unsigned);
 
     #ifdef SWAP
-    SwappedList *swapped;
     OpenFile *swap;
     char nombreSwap[30];
-    void WriteToSwap(unsigned vpn, int phy);
+    SpaceId addressSpaceId;
+    unsigned EvacuatePage();
     #endif
     #endif
 private:
