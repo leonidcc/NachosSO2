@@ -4,4 +4,5 @@ La tlb de 32 entradas mejora en cantidad de fallas segun la de 4 entradas.
 La tlb de 64 entradas tuvimos menos misses que en la de 32 entradas, 
 pero en cuanto al hit ratio, no hubo una modificacion considerable.
 Como en cada cambio de contexto necesitamos invalidar la tlb, es mejor utilizar
-la tlb de 32 entradas, ya que tenemos menos costo que en la de 64.
+la tlb de 32 entradas, es mejor que la de 64 en este caso.
+Considerando todos los puntos, el mejor tamano de los que probamos es 32 entradas.
