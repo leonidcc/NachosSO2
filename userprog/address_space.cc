@@ -283,13 +283,13 @@ int nextVictim = 0;
 unsigned
 AddressSpace::EvacuatePage() {
     //search for a victim
-    unsigned victim = PickVictim();
+    int victim = PickVictim();
     SpaceId victimSpace = pagesInUse[victim].spaceId;
 
   if(runningProcesses->HasKey(victimSpace)) { // the victim process is alive
       TranslationEntry* entry = &runningProcesses->Get(victimSpace)->space->GetPageTable()[pagesInUse[victim].virtualPage];
 
-    for(unsigned i = 0; i < TLB_SIZE; ++i) { // save the bits if the page is in the TLB
+    for(unsigned int i = 0; i < TLB_SIZE; ++i) { // save the bits if the page is in the TLB
       if(machine->GetMMU()->tlb[i].physicalPage == victim && machine->GetMMU()->tlb[i].valid) {
         machine->GetMMU()->tlb[i].valid = false;
         *entry = machine->GetMMU()->tlb[i];
