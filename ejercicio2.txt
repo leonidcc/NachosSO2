@@ -1,1 +1,6 @@
-Lo que pudimos notar corriendo el mismo programa con 2 TLB de distintos tamanos, primero utilizando un size de 32 y luego de 64, es que al ser mas grande la TLB (en el caso de ejecucion con size de 64) tuvimos menos misses. En cuanto al hit ratio, el valor no se vio modificado de forma considerable, por esto consideramos entonces que con un size de 32 para la TLB es suficiente.
+Lo que pudimos notar corriendo el mismo programa con 2 TLB 
+de distintos tamanos, primero utilizando un size de 32 y luego de 64,
+ es que al ser mas grande la TLB (en el caso de ejecucion con size de 64) 
+tuvimos menos misses. En cuanto al hit ratio, el valor no se vio modificado
+ de forma considerable, por esto consideramos entonces que con un size de 32
+ para la TLB es suficiente.
